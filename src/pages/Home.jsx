@@ -74,16 +74,6 @@ export default function Home() {
                     </div>
                 </section>
             </div>
-
-            <footer className="home-footer-minimalist">
-                <div className="footer-content">
-                    <p className="footer-logo">DOFUS WORLD</p>
-                    <p className="footer-disclaimer">&copy; 2026. Certaines illustrations sont la propriété d'Ankama Studio et de Dofus - Tous droits réservés.</p>
-                    <p className="footer-credits" style={{ marginTop: '12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                        Remerciements à <a href="https://dofusplanet.fr/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Dofus-Planet</a> pour le guide optimisé, et à <a href="https://api.dofusdu.de/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Dofusdu.de</a> pour l'API
-                    </p>
-                </div>
-            </footer>
         </div>
     );
 }

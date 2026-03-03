@@ -9,7 +9,9 @@ import Dashboard from './pages/Dashboard'
 import Guide from './pages/Guide'
 import Guild from './pages/Guild'
 import Profile from './pages/Profile'
+import PatchNotes from './pages/PatchNotes'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import ScrollToTop from './components/ScrollToTop'
 
 function PrivateRoute({ children }) {
@@ -34,9 +36,11 @@ function AppRoutes() {
                         <Route path="/guide" element={<PrivateRoute><Guide /></PrivateRoute>} />
                         <Route path="/guild" element={<PrivateRoute><Guild /></PrivateRoute>} />
                         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+                        <Route path="/patch-notes" element={<PatchNotes />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </main>
+                <Footer />
             </div>
         </Router>
     )
