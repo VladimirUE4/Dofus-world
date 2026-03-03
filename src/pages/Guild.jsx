@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useCharacter } from '../contexts/CharacterContext'
 import {
     doc, setDoc, updateDoc,
     arrayUnion, arrayRemove, onSnapshot, collection, query, where, getDocs
@@ -14,25 +15,34 @@ function generateInviteCode() {
 }
 
 function MemberCard({ member, currentUserId, ownerId }) {
-    const initials = (member.displayName || '?').slice(0, 2).toUpperCase()
-    const completed = member.completedQuests?.length || 0
+    const char = member.character || {}
+    const className = char.class || 'iop'
+    const sex = char.sex || 'm'
+    const charName = char.name || member.displayName || 'Inconnu'
+
+    // Character portrait
+    const avatarUrl = `/assets/images/classes/${className}_${sex}.png`
+
+    const completed = char.completedQuests?.length || 0
     const pct = Math.round((completed / TOTAL_QUESTS) * 100)
-    const isOwner = member.id === ownerId
-    const isMe = member.id === currentUserId
+    const isOwner = member.uid === ownerId
+    const isMe = member.uid === currentUserId
 
     return (
         <div className="member-card">
             <div className="member-header">
-                <div className="member-avatar">{initials}</div>
+                <div className="member-avatar" style={{ background: 'none', border: '1px solid var(--v5-border)', overflow: 'hidden' }}>
+                    <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', filter: 'brightness(1.2)' }} />
+                </div>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div className="member-name">
-                            {member.displayName}
-                            {isMe && <span style={{ fontSize: '0.75rem', color: 'var(--primary)', marginLeft: '6px' }}>(Vous)</span>}
+                        <div className="member-name" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontWeight: '700', fontSize: '1rem' }}>{charName}</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{className}</span>
                         </div>
+                        {isMe && <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '700' }}>VOUS</span>}
                         {isOwner && <span className="member-owner-badge">Chef</span>}
                     </div>
-                    <div className="member-role">{completed} quêtes complétées</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: '700', color: 'var(--primary)' }}>
@@ -40,7 +50,7 @@ function MemberCard({ member, currentUserId, ownerId }) {
                     </div>
                 </div>
             </div>
-            <div className="progress-bar-bg">
+            <div className="progress-bar-bg" style={{ marginTop: '12px' }}>
                 <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
             </div>
         </div>
@@ -49,6 +59,7 @@ function MemberCard({ member, currentUserId, ownerId }) {
 
 export default function Guild() {
     const { currentUser } = useAuth()
+    const { activeCharacter } = useCharacter()
     const [userData, setUserData] = useState(null)
     const [guildData, setGuildData] = useState(null)
     const [members, setMembers] = useState([])
@@ -93,10 +104,23 @@ export default function Guild() {
             const memberMap = {}
             const updateMembers = () => setMembers(Object.values(memberMap))
 
-            for (const uid of guild.members || []) {
+            for (const mInfo of guild.members || []) {
+                const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid
+                const charId = typeof mInfo === 'string' ? null : mInfo.charId
+
                 const mu = onSnapshot(doc(db, 'users', uid), (mSnap) => {
                     if (mSnap.exists()) {
-                        memberMap[uid] = { id: mSnap.id, ...mSnap.data() }
+                        const mData = mSnap.data()
+                        // Resolve character
+                        const character = charId
+                            ? (mData.characters || []).find(c => c.id === charId)
+                            : (mData.characters?.[0] || null) // Fallback to first character for legacy
+
+                        memberMap[uid] = {
+                            uid,
+                            ...mData,
+                            character
+                        }
                         updateMembers()
                     }
                 })
@@ -124,7 +148,7 @@ export default function Guild() {
                 name: createName.trim(),
                 inviteCode,
                 ownerId: currentUser.uid,
-                members: [currentUser.uid],
+                members: [{ uid: currentUser.uid, charId: activeCharacter?.id || null }],
                 createdAt: new Date(),
             })
             await updateDoc(doc(db, 'users', currentUser.uid), {
@@ -157,7 +181,8 @@ export default function Guild() {
                 return
             }
             const guildDoc = snap.docs[0]
-            await updateDoc(guildDoc.ref, { members: arrayUnion(currentUser.uid) })
+            const memberInfo = { uid: currentUser.uid, charId: activeCharacter?.id || null }
+            await updateDoc(guildDoc.ref, { members: arrayUnion(memberInfo) })
             await updateDoc(doc(db, 'users', currentUser.uid), { guildId: guildDoc.id })
             setSuccess(`Vous avez rejoint la guilde "${guildDoc.data().name}".`)
             setJoinCode('')
@@ -172,9 +197,12 @@ export default function Guild() {
         if (!confirm('Êtes-vous sûr de vouloir quitter cette guilde ?')) return
         setActionLoading(true)
         try {
-            await updateDoc(doc(db, 'guilds', guildData.id), {
-                members: arrayRemove(currentUser.uid),
-            })
+            const memberToRemove = guildData.members.find(m => (typeof m === 'string' ? m : m.uid) === currentUser.uid)
+            if (memberToRemove) {
+                await updateDoc(doc(db, 'guilds', guildData.id), {
+                    members: arrayRemove(memberToRemove),
+                })
+            }
             await updateDoc(doc(db, 'users', currentUser.uid), { guildId: null })
         } catch (err) {
             setError('Erreur lors de la tentative de quitter la guilde.')
@@ -239,7 +267,7 @@ export default function Guild() {
 
                 <div className="grid-2">
                     {members
-                        .sort((a, b) => (b.completedQuests?.length || 0) - (a.completedQuests?.length || 0))
+                        .sort((a, b) => (b.character?.completedQuests?.length || 0) - (a.character?.completedQuests?.length || 0))
                         .map(member => (
                             <MemberCard
                                 key={member.id}

@@ -1,11 +1,18 @@
 import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useCharacter } from '../contexts/CharacterContext'
+import CharacterModal from './CharacterModal'
+import CharacterSelectionModal from './CharacterSelectionModal'
 
 export default function Navbar() {
     const { currentUser, logout } = useAuth()
+    const { characters, activeCharacter, setActiveCharacterId } = useCharacter()
     const navigate = useNavigate()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isCharModalOpen, setIsCharModalOpen] = useState(false)
+    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false)
+    const [isProfileOpen, setIsProfileOpen] = useState(false)
 
     async function handleLogout() {
         await logout()
@@ -16,12 +23,10 @@ export default function Navbar() {
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
     const closeMenu = () => setIsMenuOpen(false)
 
-    const initials = (currentUser?.displayName || '?').slice(0, 2).toUpperCase()
 
     return (
         <nav className="navbar" id="navbar">
             <NavLink to="/" className="nav-brand" onClick={closeMenu}>
-                <div className="nav-logo-icon">DW</div>
                 <span className="nav-logo-text">Dofus World</span>
             </NavLink>
 
@@ -70,12 +75,27 @@ export default function Navbar() {
             <div className="nav-user desktop-only">
                 {currentUser ? (
                     <>
-                        <NavLink to="/profile" className="user-avatar-link" title="Profil">
-                            <div className="user-avatar">{initials}</div>
-                        </NavLink>
-                        <button className="btn-logout" onClick={handleLogout}>
-                            Déconnexion
-                        </button>
+
+                        <div className="user-profile-dropdown-container">
+                            <div className="user-avatar" onClick={() => setIsProfileOpen(!isProfileOpen)}>
+                                {(currentUser.displayName || '?')[0].toUpperCase()}
+                            </div>
+
+                            {isProfileOpen && (
+                                <div className="profile-dropdown">
+                                    <div className="dropdown-header">
+                                        <span className="user-name">{currentUser.displayName}</span>
+                                        <span className="user-email">{currentUser.email}</span>
+                                    </div>
+                                    <Link to="/profile" className="dropdown-item" onClick={() => setIsProfileOpen(false)}>Profil</Link>
+                                    <Link to="/guide" className="dropdown-item" onClick={() => setIsProfileOpen(false)}>Guide</Link>
+                                    <button className="dropdown-item" onClick={() => { setIsSelectionModalOpen(true); setIsProfileOpen(false); }}>
+                                        Changer de personnage
+                                    </button>
+                                    <button className="dropdown-item logout" onClick={handleLogout}>Déconnexion</button>
+                                </div>
+                            )}
+                        </div>
                     </>
                 ) : (
                     <>
@@ -84,6 +104,19 @@ export default function Navbar() {
                     </>
                 )}
             </div>
+
+            <CharacterModal
+                isOpen={isCharModalOpen}
+                onClose={() => setIsCharModalOpen(false)}
+            />
+            <CharacterSelectionModal
+                isOpen={isSelectionModalOpen}
+                onClose={() => setIsSelectionModalOpen(false)}
+                onAddCharacter={() => {
+                    setIsSelectionModalOpen(false);
+                    setIsCharModalOpen(true);
+                }}
+            />
         </nav>
     )
 }

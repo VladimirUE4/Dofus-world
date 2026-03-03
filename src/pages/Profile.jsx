@@ -1,21 +1,27 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useCharacter } from '../contexts/CharacterContext'
+import CharacterModal from '../components/CharacterModal'
+import CharacterSelectionModal from '../components/CharacterSelectionModal'
 import { doc, updateDoc } from 'firebase/firestore'
 import { updateProfile } from 'firebase/auth'
 import { db, auth } from '../firebase'
-import rawQuests from '../../dofus_dataset(2).json'
-
-const TOTAL_QUESTS = rawQuests.length
+import brakmarQuests from '../../dofus_dataset(2).json'
+import bontaQuests from '../../dofus_dataset(22).json'
 
 export default function Profile() {
     const { currentUser, userData } = useAuth()
+    const { activeCharacter, characters, setActiveCharacterId, deleteCharacter } = useCharacter()
     const [displayName, setDisplayName] = useState(currentUser?.displayName || '')
+    const [isCharModalOpen, setIsCharModalOpen] = useState(false)
+    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false)
     const [success, setSuccess] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
-    const completed = userData?.completedQuests?.length || 0
-    const pct = Math.round((completed / TOTAL_QUESTS) * 100)
+    const totalQuests = activeCharacter?.alignment === 'bonta' ? bontaQuests.length : brakmarQuests.length
+    const completed = activeCharacter?.completedQuests?.length || 0
+    const pct = Math.round((completed / totalQuests) * 100) || 0
     const initials = (currentUser?.displayName || '?').slice(0, 2).toUpperCase()
 
     async function handleSave(e) {
@@ -105,13 +111,42 @@ export default function Profile() {
                     </form>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+                    <div className="v5-hub">
+                        <div className="v5-hub-char">
+                            {activeCharacter ? (
+                                <>
+                                    <img
+                                        src={`/assets/images/classes/${activeCharacter.class}_${activeCharacter.sex}.png`}
+                                        alt=""
+                                        className="v5-hub-img"
+                                    />
+                                    <div>
+                                        <h2 className="v5-hub-name">{activeCharacter.name.toUpperCase()}</h2>
+                                        <div className="v5-hub-meta">
+                                            {activeCharacter.class.toUpperCase()} • {activeCharacter.alignment.toUpperCase()} • {activeCharacter.completedQuests?.length || 0} EXPLOITS
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="v5-hub-name" style={{ opacity: 0.2 }}>AUCUN HÉROS ACTIF</div>
+                            )}
+                        </div>
+
+                        <button
+                            className="v5-hub-btn"
+                            onClick={() => setIsSelectionModalOpen(true)}
+                        >
+                            GESTION DES HÉROS
+                        </button>
+                    </div>
+
                     <div className="card">
                         <h2 className="card-title">Statistiques Globales</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '12px' }}>
                             <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Progression</span>
+                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Progression {activeCharacter?.name}</span>
                                     <span style={{ fontFamily: 'var(--font-display)', color: 'var(--primary)', fontWeight: '700' }}>{pct}%</span>
                                 </div>
                                 <div className="progress-bar-bg" style={{ height: '10px' }}>
@@ -124,7 +159,7 @@ export default function Profile() {
                                     <div className="stat-label">Complétées</div>
                                 </div>
                                 <div className="stat-card" style={{ padding: '16px' }}>
-                                    <div className="stat-value" style={{ fontSize: '1.8rem' }}>{TOTAL_QUESTS - completed}</div>
+                                    <div className="stat-value" style={{ fontSize: '1.8rem' }}>{totalQuests - completed}</div>
                                     <div className="stat-label">Restantes</div>
                                 </div>
                             </div>
@@ -132,6 +167,19 @@ export default function Profile() {
                     </div>
                 </div>
             </div>
+
+            <CharacterModal
+                isOpen={isCharModalOpen}
+                onClose={() => setIsCharModalOpen(false)}
+            />
+            <CharacterSelectionModal
+                isOpen={isSelectionModalOpen}
+                onClose={() => setIsSelectionModalOpen(false)}
+                onAddCharacter={() => {
+                    setIsSelectionModalOpen(false);
+                    setIsCharModalOpen(true);
+                }}
+            />
         </div>
     )
 }

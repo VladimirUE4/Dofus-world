@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore'
+import { useCharacter } from '../contexts/CharacterContext'
+import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
-import rawQuests from '../../dofus_dataset(2).json'
+import brakmarQuests from '../../dofus_dataset(2).json'
+import bontaQuests from '../../dofus_dataset(22).json'
 
-const rawQuestsWithIndex = rawQuests.map((q, idx) => ({ ...q, originalIndex: idx }));
-// We don't sort here anymore, we trust the JSON order which interleaves categories and quests.
-// If you must sort, ensure categories and quests stay together. For now, let's keep the JSON order.
-const QUESTS = rawQuestsWithIndex;
-const TOTAL = QUESTS.filter(q => q.type === 'quest').length;
+const prepareQuests = (raw) => raw.map((q, idx) => ({ ...q, originalIndex: idx }));
+
+const BRAKMAR_QUESTS = prepareQuests(brakmarQuests);
+const BONTA_QUESTS = prepareQuests(bontaQuests);
 
 function CategoryItem({ category }) {
     // Extract description from title if it follows "Title : description"
@@ -36,57 +37,68 @@ function CategoryItem({ category }) {
 
 function QuestItem({ quest, completed, onToggle, trackedMembersCompleted }) {
     const images = quest.images || []
+    const bossImages = quest.bossImages || (quest.bossImage ? [quest.bossImage] : [])
 
     return (
-        <div
-            className={`quest-item${completed ? ' completed' : ''}`}
-            onClick={() => onToggle(quest.id)}
-        >
-            <div className="quest-main-info">
-                <div className="quest-checkbox-wrapper">
-                    <input
-                        type="checkbox"
-                        className="quest-checkbox"
-                        checked={completed}
-                        onChange={() => onToggle(quest.id)}
-                        onClick={e => e.stopPropagation()}
-                        id={`quest-${quest.id}`}
-                    />
-                </div>
+        <div className="quest-row">
+            <div
+                className={`quest-item${completed ? ' completed' : ''}`}
+                onClick={() => onToggle(quest.id)}
+            >
+                <div className="quest-main-info">
+                    <div className="quest-checkbox-wrapper">
+                        <input
+                            type="checkbox"
+                            className="quest-checkbox"
+                            checked={completed}
+                            onChange={() => onToggle(quest.id)}
+                            onClick={e => e.stopPropagation()}
+                            id={`quest-${quest.id}`}
+                        />
+                    </div>
 
-                <span className="quest-level-badge">Lvl {quest.questLevel}</span>
+                    <span className="quest-level-badge">Lvl {quest.questLevel}</span>
 
-                <div className="quest-dataset-images">
-                    {images.map((imgUrl, idx) => (
-                        <img key={idx} src={imgUrl} alt="" className="quest-dataset-img" />
-                    ))}
-                </div>
-
-                <span className="quest-name">{quest.name}</span>
-
-                {trackedMembersCompleted && trackedMembersCompleted.length > 0 && (
-                    <div className="quest-member-avatars">
-                        {trackedMembersCompleted.map(member => (
-                            <div key={member.id} className="quest-member-avatar" title={`${member.name} a terminé cette quête`}>
-                                {member.name.charAt(0).toUpperCase()}
-                            </div>
+                    <div className="quest-dataset-images">
+                        {images.map((imgUrl, idx) => (
+                            <img key={idx} src={imgUrl} alt="" className="quest-dataset-img" />
                         ))}
                     </div>
-                )}
 
-                <a
-                    href={quest.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="quest-link"
-                    onClick={e => e.stopPropagation()}
-                >
-                    Ouvrir le guide
-                </a>
+                    <span className="quest-name">{quest.name}</span>
+
+                    {trackedMembersCompleted && trackedMembersCompleted.length > 0 && (
+                        <div className="quest-member-avatars">
+                            {trackedMembersCompleted.map(member => (
+                                <div key={member.id} className="quest-member-avatar" title={`${member.name} a terminé cette quête`}>
+                                    {member.name.charAt(0).toUpperCase()}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <a
+                        href={quest.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="quest-link"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        Ouvrir le guide
+                    </a>
+                </div>
+                {quest.description && (
+                    <div className="quest-description">
+                        {quest.description}
+                    </div>
+                )}
             </div>
-            {quest.description && (
-                <div className="quest-description">
-                    {quest.description}
+
+            {bossImages.length > 0 && (
+                <div className={`quest-boss-images ${bossImages.length > 3 ? 'many' : 'few'}`}>
+                    {bossImages.map((bossUrl, idx) => (
+                        <img key={idx} src={bossUrl} alt="Boss" className="quest-boss-img" />
+                    ))}
                 </div>
             )}
         </div>
@@ -95,26 +107,33 @@ function QuestItem({ quest, completed, onToggle, trackedMembersCompleted }) {
 
 export default function Guide() {
     const { currentUser } = useAuth()
-    const [completedQuests, setCompletedQuests] = useState([])
+    const { activeCharacter, toggleQuest } = useCharacter()
     const [filter, setFilter] = useState('all')
     const [search, setSearch] = useState('')
-    const [updating, setUpdating] = useState(false)
     const [currentPage, setCurrentPage] = useState(1)
+    const [updating, setUpdating] = useState(false)
     const itemsPerPage = 50
+
+    // Selected Dataset based on alignment
+    const QUESTS = useMemo(() => {
+        if (!activeCharacter) return []
+        return activeCharacter.alignment === 'bonta' ? BONTA_QUESTS : BRAKMAR_QUESTS
+    }, [activeCharacter])
+
+    const TOTAL = useMemo(() => QUESTS.filter(q => q.type === 'quest').length, [QUESTS])
+    const completedQuests = activeCharacter?.completedQuests || []
 
     // Guild specific state
     const [userGuildId, setUserGuildId] = useState(null)
     const [guildMembers, setGuildMembers] = useState([])
-    const [trackedMemberIds, setTrackedMemberIds] = useState([]) // IDs of members the user chose to display
+    const [trackedMemberIds, setTrackedMemberIds] = useState([])
 
-    // Real-time sync for User
+    // Sync Guild info
     useEffect(() => {
         if (!currentUser) return
         const unsub = onSnapshot(doc(db, 'users', currentUser.uid), (snap) => {
             if (snap.exists()) {
-                const data = snap.data();
-                setCompletedQuests(data.completedQuests || [])
-                setUserGuildId(data.guildId || null)
+                setUserGuildId(snap.data().guildId || null)
             }
         })
         return unsub
@@ -155,37 +174,49 @@ export default function Guide() {
             const guildDoc = await getDoc(doc(db, 'guilds', userGuildId));
             if (!guildDoc.exists()) return;
 
-            const memberIds = guildDoc.data().members || [];
-            const otherMemberIds = memberIds.filter(id => id !== currentUser.uid);
+            const memberInfos = guildDoc.data().members || [];
+            const otherMembers = memberInfos.filter(m => (typeof m === 'string' ? m : m.uid) !== currentUser.uid);
 
-            // We need to keep track of unsubscribe functions
             const unsubs = [];
 
-            // Initialize members array
             setGuildMembers(current => {
-                // Keep existing members to avoid flash, but reset if new guild
-                return otherMemberIds.map(id => ({ id, name: 'Loading...', completedQuests: [] }))
+                return otherMembers.map(m => {
+                    const uid = typeof m === 'string' ? m : m.uid;
+                    return { id: uid, name: 'Loading...', completedQuests: [] };
+                });
             });
 
-            otherMemberIds.forEach(mId => {
-                const unsub = onSnapshot(doc(db, 'users', mId), (snap) => {
+            otherMembers.forEach(mInfo => {
+                const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid;
+                const charId = typeof mInfo === 'string' ? null : mInfo.charId;
+
+                const unsub = onSnapshot(doc(db, 'users', uid), (snap) => {
                     if (snap.exists()) {
-                        const data = snap.data();
+                        const mData = snap.data();
+                        const char = charId
+                            ? (mData.characters || []).find(c => c.id === charId)
+                            : (mData.characters?.[0] || null);
+
+                        const quests = char?.completedQuests || mData.completedQuests || [];
+                        const charName = char?.name || mData.displayName || 'Inconnu';
+                        const className = char?.class || 'iop';
+                        const sex = char?.sex || 'm';
+
                         setGuildMembers(prev => {
                             const newMembers = [...prev];
-                            const idx = newMembers.findIndex(m => m.id === mId);
+                            const idx = newMembers.findIndex(m => m.id === uid);
+                            const memberData = {
+                                id: uid,
+                                name: charName,
+                                charName,
+                                className,
+                                sex,
+                                completedQuests: quests
+                            };
                             if (idx >= 0) {
-                                newMembers[idx] = {
-                                    id: mId,
-                                    name: data.displayName || 'Inconnu',
-                                    completedQuests: data.completedQuests || []
-                                };
+                                newMembers[idx] = memberData;
                             } else {
-                                newMembers.push({
-                                    id: mId,
-                                    name: data.displayName || 'Inconnu',
-                                    completedQuests: data.completedQuests || []
-                                });
+                                newMembers.push(memberData);
                             }
                             return newMembers;
                         });
@@ -194,37 +225,24 @@ export default function Guide() {
                 unsubs.push(unsub);
             });
 
-            return () => {
-                unsubs.forEach(u => u());
-            };
+            return () => { unsubs.forEach(u => u()); };
         };
 
         const cleanupPromise = initGuildMembers();
-
         return () => {
-            cleanupPromise.then(cleanup => {
-                if (cleanup) cleanup();
-            });
+            cleanupPromise.then(cleanup => { if (cleanup) cleanup(); });
         };
     }, [userGuildId, currentUser]);
 
 
-    const toggleQuest = useCallback(async (questId) => {
-        if (updating) return
-        const isCompleted = completedQuests.includes(questId)
+    const handleToggle = useCallback(async (questId) => {
         setUpdating(true)
         try {
-            const userRef = doc(db, 'users', currentUser.uid)
-            if (isCompleted) {
-                await updateDoc(userRef, { completedQuests: arrayRemove(questId) })
-            } else {
-                await updateDoc(userRef, { completedQuests: arrayUnion(questId) })
-            }
-        } catch (e) {
-            console.error(e)
+            await toggleQuest(questId)
+        } finally {
+            setUpdating(false)
         }
-        setUpdating(false)
-    }, [completedQuests, currentUser, updating])
+    }, [toggleQuest])
 
     const filteredQuests = useMemo(() => {
         let list = QUESTS
@@ -270,6 +288,11 @@ export default function Guide() {
         setCurrentPage(1)
     }, [filter, search])
 
+    // Scroll to top when page changes (pagination)
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, [currentPage])
+
     const totalPages = Math.ceil(filteredQuests.length / itemsPerPage)
     const currentQuests = filteredQuests.slice(
         (currentPage - 1) * itemsPerPage,
@@ -277,6 +300,21 @@ export default function Guide() {
     )
 
     const progressPct = TOTAL === 0 ? 0 : Math.round((completedQuests.length / TOTAL) * 100)
+
+    if (!activeCharacter) {
+        return (
+            <div className="fade-in-up">
+                <div className="page-header">
+                    <h1 className="page-title">Guide Optimisé</h1>
+                    <p className="page-subtitle">Veuillez créer ou sélectionner un personnage pour commencer.</p>
+                </div>
+                <div className="empty-state card" style={{ padding: '60px' }}>
+                    <div className="empty-state-text">Aucun personnage actif.</div>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '10px' }}>Créez votre premier personnage via le menu en haut à droite pour suivre votre progression.</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="fade-in-up">
@@ -357,10 +395,12 @@ export default function Guide() {
                                         );
                                     }}
                                     className={`guild-track-btn ${isTracked ? 'active' : ''}`}
-                                    title={`${member.completedQuests.length} quêtes terminées`}
+                                    title={`${member.charName} : ${member.completedQuests.length} quêtes terminées`}
                                 >
-                                    <div className="guild-track-avatar">{member.name.charAt(0).toUpperCase()}</div>
-                                    <span>{member.name}</span>
+                                    <div className="guild-track-avatar" style={{ overflow: 'hidden', padding: 0, background: 'none' }}>
+                                        <img src={`/assets/images/classes/${member.className}_${member.sex}.png`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                    <span style={{ fontSize: '0.8rem' }}>{member.charName}</span>
                                 </button>
                             );
                         })}
@@ -396,12 +436,16 @@ export default function Guide() {
                                 key={item.id}
                                 quest={item}
                                 completed={completedQuests.includes(item.id)}
-                                onToggle={toggleQuest}
+                                onToggle={handleToggle}
                                 trackedMembersCompleted={trackedMembersCompleted}
                             />
                         )
                     })
                 )}
+            </div>
+
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '20px' }}>
+                Mode Alignement : <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{activeCharacter.alignment.toUpperCase()}</span>
             </div>
 
             {/* Pagination */}

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useCharacter } from '../contexts/CharacterContext'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
-
-const TOTAL_QUESTS = 1374
 
 function ProgressBar({ pct, label }) {
     return (
@@ -24,6 +23,7 @@ function ProgressBar({ pct, label }) {
 
 export default function Dashboard() {
     const { currentUser } = useAuth()
+    const { activeCharacter, characters } = useCharacter()
     const [userData, setUserData] = useState(null)
     const [guildData, setGuildData] = useState(null)
     const [guildMembers, setGuildMembers] = useState([])
@@ -42,12 +42,19 @@ export default function Dashboard() {
                 const guild = { id: guildSnap.id, ...guildSnap.data() }
                 setGuildData(guild)
 
-                const membersPromises = (guild.members || []).map(uid =>
-                    new Promise(res => onSnapshot(doc(db, 'users', uid), snap => {
-                        if (snap.exists()) res({ id: snap.id, ...snap.data() })
-                        else res(null)
-                    }))
-                )
+                const membersPromises = (guild.members || []).map(async mInfo => {
+                    const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid
+                    const charId = typeof mInfo === 'string' ? null : mInfo.charId
+                    const snap = await getDoc(doc(db, 'users', uid))
+                    if (snap.exists()) {
+                        const mData = snap.data()
+                        const character = charId
+                            ? (mData.characters || []).find(c => c.id === charId)
+                            : (mData.characters?.[0] || null)
+                        return { uid, ...mData, character }
+                    }
+                    return null
+                })
                 const members = (await Promise.all(membersPromises)).filter(Boolean)
                 setGuildMembers(members)
             }
@@ -55,8 +62,9 @@ export default function Dashboard() {
         return unsub
     }, [currentUser])
 
-    const completedCount = (userData?.completedQuests || []).length
-    const progressPct = Math.round((completedCount / TOTAL_QUESTS) * 100)
+    const totalQuests = 1374 // Approximate for display
+    const completedCount = activeCharacter?.completedQuests?.length || 0
+    const progressPct = Math.round((completedCount / totalQuests) * 100)
 
     return (
         <div className="fade-in-up">
@@ -74,7 +82,7 @@ export default function Dashboard() {
                     <div className="stat-label">Quêtes complétées</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">{TOTAL_QUESTS - completedCount}</div>
+                    <div className="stat-value">{totalQuests - completedCount}</div>
                     <div className="stat-label">Quêtes restantes</div>
                 </div>
                 <div className="stat-card">
@@ -94,17 +102,26 @@ export default function Dashboard() {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {guildMembers.map(member => {
-                                    const pct = Math.round(((member.completedQuests?.length || 0) / TOTAL_QUESTS) * 100)
-                                    const ini = (member.displayName || '?').slice(0, 2).toUpperCase()
+                                    const char = member.character || {}
+                                    const mCompleted = char.completedQuests?.length || 0
+                                    const pct = Math.round((mCompleted / totalQuests) * 100)
+                                    const avatarUrl = `/assets/images/classes/${char.class || 'iop'}_${char.sex || 'm'}.png`
+
                                     return (
-                                        <div key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div className="member-avatar" style={{ width: '32px', height: '32px', fontSize: '0.75rem' }}>
-                                                {ini}
+                                        <div key={member.uid} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div className="member-avatar" style={{ width: '32px', height: '32px', background: 'none', border: '1px solid var(--v5-border)', overflow: 'hidden', padding: 0 }}>
+                                                {char.class ? (
+                                                    <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', background: 'var(--bg-card)' }}>
+                                                        {(member.displayName || '?').slice(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontSize: '0.8rem', fontWeight: '500', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                                                    {member.displayName}
-                                                    {member.id === currentUser.uid && (
+                                                    {char.name || member.displayName}
+                                                    {member.uid === currentUser.uid && (
                                                         <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: 'var(--primary)' }}>Vous</span>
                                                     )}
                                                 </div>
@@ -143,7 +160,7 @@ export default function Dashboard() {
                             Statut Actuel
                         </div>
                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                            Vous avez complété {completedCount} quêtes sur l'ensemble du guide ({TOTAL_QUESTS}).
+                            Vous avez complété {completedCount} quêtes sur l'ensemble du guide ({totalQuests}).
                         </div>
                     </div>
 

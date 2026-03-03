@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { CharacterProvider } from './contexts/CharacterContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
@@ -9,6 +10,7 @@ import Guide from './pages/Guide'
 import Guild from './pages/Guild'
 import Profile from './pages/Profile'
 import Navbar from './components/Navbar'
+import ScrollToTop from './components/ScrollToTop'
 
 function PrivateRoute({ children }) {
     const { currentUser } = useAuth()
@@ -19,6 +21,7 @@ function AppRoutes() {
     const { currentUser } = useAuth()
     return (
         <Router>
+            <ScrollToTop />
             <div className="app-layout">
                 <Navbar />
                 <main className="main-content">
@@ -42,7 +45,9 @@ function AppRoutes() {
 export default function App() {
     return (
         <AuthProvider>
-            <AppRoutes />
+            <CharacterProvider>
+                <AppRoutes />
+            </CharacterProvider>
         </AuthProvider>
     )
 }
