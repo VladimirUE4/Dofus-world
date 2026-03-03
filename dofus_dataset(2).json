@@ -317,20 +317,6 @@
   },
   {
     "type": "quest",
-    "id": "1355",
-    "stepId": "24",
-    "name": "Le choix des armes",
-    "link": "https://www.dofuspourlesnoobs.com/le-choix-des-armes.html",
-    "questLevel": 8,
-    "description": null,
-    "images": [
-      "https://www.dofusplanet.fr/img/icons/quest_book2.png"
-    ],
-    "page": "https://www.dofusplanet.fr/guide-opti#",
-    "timestamp": 1772046414661
-  },
-  {
-    "type": "quest",
     "id": "1339",
     "stepId": "25",
     "name": "Dans la gueule du Milimilou",

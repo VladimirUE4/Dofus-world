@@ -11,8 +11,15 @@ const QUESTS = rawQuestsWithIndex;
 const TOTAL = QUESTS.filter(q => q.type === 'quest').length;
 
 function CategoryItem({ category }) {
-    // Description is sometimes bundled in the title in the dataset "Title : description"
-    // Let's try to split it nicely if possible, or just show it whole.
+    // Extract description from title if it follows "Title : description"
+    let displayTitle = category.title;
+    let desc = '';
+    const splitIndex = category.title.indexOf(' : ');
+    if (splitIndex !== -1) {
+        displayTitle = category.title.substring(0, splitIndex);
+        desc = category.title.substring(splitIndex + 3);
+    }
+
     return (
         <div className="category-card">
             <div className="category-image-wrap">
@@ -20,7 +27,8 @@ function CategoryItem({ category }) {
                 <div className="category-step-badge">{category.step}</div>
             </div>
             <div className="category-content">
-                <div className="category-title">{category.title}</div>
+                <div className="category-title">{displayTitle}</div>
+                {desc && <div className="category-desc">{desc}</div>}
             </div>
         </div>
     )
@@ -34,47 +42,53 @@ function QuestItem({ quest, completed, onToggle, trackedMembersCompleted }) {
             className={`quest-item${completed ? ' completed' : ''}`}
             onClick={() => onToggle(quest.id)}
         >
-            <div className="quest-checkbox-wrapper">
-                <input
-                    type="checkbox"
-                    className="quest-checkbox"
-                    checked={completed}
-                    onChange={() => onToggle(quest.id)}
-                    onClick={e => e.stopPropagation()}
-                    id={`quest-${quest.id}`}
-                />
-            </div>
+            <div className="quest-main-info">
+                <div className="quest-checkbox-wrapper">
+                    <input
+                        type="checkbox"
+                        className="quest-checkbox"
+                        checked={completed}
+                        onChange={() => onToggle(quest.id)}
+                        onClick={e => e.stopPropagation()}
+                        id={`quest-${quest.id}`}
+                    />
+                </div>
 
-            <span className="quest-level-badge">Lvl {quest.questLevel}</span>
+                <span className="quest-level-badge">Lvl {quest.questLevel}</span>
 
-            <div className="quest-dataset-images">
-                {images.map((imgUrl, idx) => (
-                    <img key={idx} src={imgUrl} alt="" className="quest-dataset-img" />
-                ))}
-            </div>
-
-            <span className="quest-name">{quest.name}</span>
-
-            {/* Guild Member avatars who completed this quest */}
-            {trackedMembersCompleted && trackedMembersCompleted.length > 0 && (
-                <div className="quest-member-avatars">
-                    {trackedMembersCompleted.map(member => (
-                        <div key={member.id} className="quest-member-avatar" title={`${member.name} a terminé cette quête`}>
-                            {member.name.charAt(0).toUpperCase()}
-                        </div>
+                <div className="quest-dataset-images">
+                    {images.map((imgUrl, idx) => (
+                        <img key={idx} src={imgUrl} alt="" className="quest-dataset-img" />
                     ))}
                 </div>
-            )}
 
-            <a
-                href={quest.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="quest-link"
-                onClick={e => e.stopPropagation()}
-            >
-                Ouvrir le guide
-            </a>
+                <span className="quest-name">{quest.name}</span>
+
+                {trackedMembersCompleted && trackedMembersCompleted.length > 0 && (
+                    <div className="quest-member-avatars">
+                        {trackedMembersCompleted.map(member => (
+                            <div key={member.id} className="quest-member-avatar" title={`${member.name} a terminé cette quête`}>
+                                {member.name.charAt(0).toUpperCase()}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <a
+                    href={quest.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="quest-link"
+                    onClick={e => e.stopPropagation()}
+                >
+                    Ouvrir le guide
+                </a>
+            </div>
+            {quest.description && (
+                <div className="quest-description">
+                    {quest.description}
+                </div>
+            )}
         </div>
     )
 }
@@ -85,6 +99,8 @@ export default function Guide() {
     const [filter, setFilter] = useState('all')
     const [search, setSearch] = useState('')
     const [updating, setUpdating] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 50
 
     // Guild specific state
     const [userGuildId, setUserGuildId] = useState(null)
@@ -249,6 +265,17 @@ export default function Guide() {
         return list
     }, [filter, search, completedQuests])
 
+    // Reset pagination when filter or search changes
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [filter, search])
+
+    const totalPages = Math.ceil(filteredQuests.length / itemsPerPage)
+    const currentQuests = filteredQuests.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    )
+
     const progressPct = TOTAL === 0 ? 0 : Math.round((completedQuests.length / TOTAL) * 100)
 
     return (
@@ -348,12 +375,12 @@ export default function Guide() {
 
             {/* Quest List */}
             <div className="quest-list">
-                {filteredQuests.length === 0 ? (
+                {currentQuests.length === 0 ? (
                     <div className="empty-state">
                         <div className="empty-state-text">Aucun résultat trouvé.</div>
                     </div>
                 ) : (
-                    filteredQuests.map((item) => {
+                    currentQuests.map((item) => {
                         if (item.type === 'category') {
                             return <CategoryItem key={`cat-${item.originalIndex}`} category={item} />
                         }
@@ -376,6 +403,29 @@ export default function Guide() {
                     })
                 )}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="pagination">
+                    <button
+                        className="page-btn"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    >
+                        Précédent
+                    </button>
+                    <span className="page-info">
+                        Page {currentPage} sur {totalPages}
+                    </span>
+                    <button
+                        className="page-btn"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    >
+                        Suivant
+                    </button>
+                </div>
+            )}
         </div>
     )
 }
