@@ -20,7 +20,17 @@ export default function Almanax() {
                 const result = await response.json();
 
                 if (Array.isArray(result)) {
-                    setData(result);
+                    // Filter out past days
+                    const todayAtMidnight = new Date();
+                    todayAtMidnight.setHours(0, 0, 0, 0);
+
+                    const filteredQuests = result.filter(day => {
+                        const questDate = new Date(day.date);
+                        questDate.setHours(0, 0, 0, 0);
+                        return questDate.getTime() >= todayAtMidnight.getTime();
+                    });
+
+                    setData(filteredQuests);
                 } else {
                     setData([]);
                 }
@@ -74,41 +84,80 @@ export default function Almanax() {
                     <p className="state-text">Impossible de charger l'Almanax pour le moment.</p>
                 </div>
             ) : (
-                <div className="almanax-grid">
-                    {data.map((day) => (
-                        <div className="almanax-card" key={day.date}>
-                            <div className="almanax-header">
-                                <div className="almanax-date">{formatDate(day.date)}</div>
+                <>
+                    {/* Featured Today Card */}
+                    {data.length > 0 && (
+                        <div className="almanax-featured-card">
+                            <div className="featured-image-wrap">
+                                <div className="featured-badge">Aujourd'hui</div>
+                                <img src={data[0].tribute.item.image_urls.sd} alt={data[0].tribute.item.name} className="featured-image" />
+                                <div className="featured-quantity">x{data[0].tribute.quantity}</div>
                             </div>
-
-                            <div className="almanax-body">
-                                <div className="almanax-tribute">
-                                    <div className="tribute-image-wrap">
-                                        <img src={day.tribute.item.image_urls.sd} alt={day.tribute.item.name} className="tribute-image" />
-                                        <div className="tribute-quantity-badge">x{day.tribute.quantity}</div>
+                            <div className="featured-content">
+                                <div className="featured-header">
+                                    <div className="featured-date">{formatDate(data[0].date)}</div>
+                                    <div className="featured-name">{data[0].tribute.item.name}</div>
+                                </div>
+                                <div className="featured-bonus">
+                                    <span className="featured-bonus-type">{data[0].bonus.type.name}</span>
+                                    <p className="featured-bonus-desc">{data[0].bonus.description}</p>
+                                </div>
+                                <div className="featured-footer">
+                                    <div className="featured-reward kamas text-warning" style={{ color: '#ffc107' }}>
+                                        <span className="reward-icon">💰</span>
+                                        <span>{data[0].reward_kamas.toLocaleString('fr-FR')} Kamas</span>
                                     </div>
-                                    <div className="tribute-name">{day.tribute.item.name}</div>
-                                </div>
-
-                                <div className="almanax-bonus">
-                                    <span className="bonus-type">{day.bonus.type.name}</span>
-                                    <p className="bonus-desc">{day.bonus.description}</p>
-                                </div>
-                            </div>
-
-                            <div className="almanax-footer">
-                                <div className="reward kamas">
-                                    <span className="reward-icon">💰</span>
-                                    <span className="reward-value">{day.reward_kamas.toLocaleString('fr-FR')}</span>
-                                </div>
-                                <div className="reward xp">
-                                    <span className="reward-icon">⭐</span>
-                                    <span className="reward-value">{day.reward_xp.toLocaleString('fr-FR')}</span>
+                                    <div className="featured-reward xp text-info" style={{ color: '#00bcd4' }}>
+                                        <span className="reward-icon">⭐</span>
+                                        <span>{data[0].reward_xp.toLocaleString('fr-FR')} XP</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    ))}
-                </div>
+                    )}
+
+                    {/* Upcoming Days Grid */}
+                    {data.length > 1 && (
+                        <>
+                            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', marginBottom: '16px', color: 'var(--text-secondary)' }}>Jours suivants</h3>
+                            <div className="almanax-grid">
+                                {data.slice(1).map((day) => (
+                                    <div className="almanax-card" key={day.date}>
+                                        <div className="almanax-header">
+                                            <div className="almanax-date">{formatDate(day.date)}</div>
+                                        </div>
+
+                                        <div className="almanax-body">
+                                            <div className="almanax-tribute">
+                                                <div className="tribute-image-wrap">
+                                                    <img src={day.tribute.item.image_urls.sd} alt={day.tribute.item.name} className="tribute-image" />
+                                                    <div className="tribute-quantity-badge">x{day.tribute.quantity}</div>
+                                                </div>
+                                                <div className="tribute-name">{day.tribute.item.name}</div>
+                                            </div>
+
+                                            <div className="almanax-bonus">
+                                                <span className="bonus-type">{day.bonus.type.name}</span>
+                                                <p className="bonus-desc">{day.bonus.description}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="almanax-footer">
+                                            <div className="reward kamas">
+                                                <span className="reward-icon">💰</span>
+                                                <span className="reward-value">{day.reward_kamas.toLocaleString('fr-FR')}</span>
+                                            </div>
+                                            <div className="reward xp">
+                                                <span className="reward-icon">⭐</span>
+                                                <span className="reward-value">{day.reward_xp.toLocaleString('fr-FR')}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </>
             )}
         </div>
     );

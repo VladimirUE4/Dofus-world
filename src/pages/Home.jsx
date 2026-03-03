@@ -79,6 +79,9 @@ export default function Home() {
                 <div className="footer-content">
                     <p className="footer-logo">DOFUS WORLD</p>
                     <p className="footer-disclaimer">&copy; 2026. Design épuré pour l'expérience ultime. Fan site non officiel.</p>
+                    <p className="footer-credits" style={{ marginTop: '12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Remerciements à <a href="https://dofusplanet.fr/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Dofus-Planet</a> pour le guide optimisé, et à <a href="https://api.dofusdu.de/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Dofusdu.de</a> pour l'API.
+                    </p>
                 </div>
             </footer>
         </div>
