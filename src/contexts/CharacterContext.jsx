@@ -26,9 +26,14 @@ export function CharacterProvider({ children }) {
         }
 
         const userDocRef = doc(db, 'users', currentUser.uid)
+        setLoading(true)
 
         // Listen to character changes in the user document
+        const currentUid = currentUser.uid
         const unsub = onSnapshot(userDocRef, (docSnap) => {
+            // Guard: ensure we only update for the current user session
+            if (currentUser.uid !== currentUid) return;
+
             if (docSnap.exists()) {
                 const data = docSnap.data()
                 const charList = data.characters || []

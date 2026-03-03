@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { NavLink, Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCharacter } from '../contexts/CharacterContext'
 import CharacterModal from './CharacterModal'
@@ -7,8 +7,9 @@ import CharacterSelectionModal from './CharacterSelectionModal'
 
 export default function Navbar() {
     const { currentUser, logout } = useAuth()
-    const { characters, activeCharacter, setActiveCharacterId } = useCharacter()
+    const { characters, activeCharacter, setActiveCharacterId, loading } = useCharacter()
     const navigate = useNavigate()
+    const location = useLocation()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isCharModalOpen, setIsCharModalOpen] = useState(false)
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false)
@@ -17,11 +18,25 @@ export default function Navbar() {
     async function handleLogout() {
         await logout()
         setIsMenuOpen(false)
+        setIsCharModalOpen(false)
+        setIsSelectionModalOpen(false)
+        setIsProfileOpen(false)
         navigate('/login')
     }
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
     const closeMenu = () => setIsMenuOpen(false)
+
+    // Onboarding: If logged in with 0 characters, open creation modal
+    // Only on "protected" play pages
+    useEffect(() => {
+        const protectedPaths = ['/dashboard', '/guide', '/guild', '/profile']
+        const isProtectedPath = protectedPaths.includes(location.pathname)
+
+        if (!loading && currentUser && characters.length === 0 && isProtectedPath && !isCharModalOpen && !isSelectionModalOpen) {
+            setIsCharModalOpen(true)
+        }
+    }, [loading, currentUser, characters.length, isCharModalOpen, isSelectionModalOpen, location.pathname])
 
 
     return (

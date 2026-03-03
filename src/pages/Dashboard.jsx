@@ -28,39 +28,69 @@ export default function Dashboard() {
     const [guildData, setGuildData] = useState(null)
     const [guildMembers, setGuildMembers] = useState([])
 
+    // 1. Sync User Data
     useEffect(() => {
-        if (!currentUser) return
-        const unsub = onSnapshot(doc(db, 'users', currentUser.uid), async (snap) => {
-            if (!snap.exists()) return
-            const data = snap.data()
-            setUserData(data)
+        if (!currentUser) {
+            setUserData(null)
+            setGuildData(null)
+            setGuildMembers([])
+            return
+        }
 
-            if (data.guildId) {
-                const guildSnap = await new Promise(res =>
-                    onSnapshot(doc(db, 'guilds', data.guildId), res)
-                )
-                const guild = { id: guildSnap.id, ...guildSnap.data() }
-                setGuildData(guild)
+        const unsubUser = onSnapshot(doc(db, 'users', currentUser.uid), (snap) => {
+            if (snap.exists()) {
+                setUserData(snap.data())
+            }
+        })
+        return unsubUser
+    }, [currentUser])
 
-                const membersPromises = (guild.members || []).map(async mInfo => {
-                    const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid
-                    const charId = typeof mInfo === 'string' ? null : mInfo.charId
-                    const snap = await getDoc(doc(db, 'users', uid))
-                    if (snap.exists()) {
-                        const mData = snap.data()
+    // 2. Sync Guild & Members (depends on userData.guildId)
+    useEffect(() => {
+        const guildId = userData?.guildId
+        if (!guildId || !currentUser) {
+            setGuildData(null)
+            setGuildMembers([])
+            return
+        }
+
+        // Listen to Guild Doc
+        const unsubGuild = onSnapshot(doc(db, 'guilds', guildId), async (guildSnap) => {
+            if (!guildSnap.exists()) {
+                setGuildData(null)
+                setGuildMembers([])
+                return
+            }
+
+            const guild = { id: guildSnap.id, ...guildSnap.data() }
+            setGuildData(guild)
+
+            // Resolve members
+            const membersPromises = (guild.members || []).map(async mInfo => {
+                const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid
+                const charId = typeof mInfo === 'string' ? null : mInfo.charId
+
+                try {
+                    const userSnap = await getDoc(doc(db, 'users', uid))
+                    if (userSnap.exists()) {
+                        const mData = userSnap.data()
                         const character = charId
                             ? (mData.characters || []).find(c => c.id === charId)
                             : (mData.characters?.[0] || null)
                         return { uid, ...mData, character }
                     }
-                    return null
-                })
-                const members = (await Promise.all(membersPromises)).filter(Boolean)
-                setGuildMembers(members)
-            }
+                } catch (err) {
+                    console.error("Error fetching member:", err)
+                }
+                return null
+            })
+
+            const resolvedMembers = (await Promise.all(membersPromises)).filter(Boolean)
+            setGuildMembers(resolvedMembers)
         })
-        return unsub
-    }, [currentUser])
+
+        return unsubGuild
+    }, [userData?.guildId, currentUser])
 
     const totalQuests = 1374 // Approximate for display
     const completedCount = activeCharacter?.completedQuests?.length || 0
@@ -109,12 +139,12 @@ export default function Dashboard() {
 
                                     return (
                                         <div key={member.uid} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div className="member-avatar" style={{ width: '32px', height: '32px', background: 'none', border: '1px solid var(--v5-border)', overflow: 'hidden', padding: 0 }}>
+                                            <div className="member-avatar" style={{ width: '32px', height: '32px', background: 'none', border: '1px solid var(--v5-border)', overflow: 'hidden', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 {char.class ? (
                                                     <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 ) : (
-                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', background: 'var(--bg-card)' }}>
-                                                        {(member.displayName || '?').slice(0, 2).toUpperCase()}
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
+                                                        N/A
                                                     </div>
                                                 )}
                                             </div>

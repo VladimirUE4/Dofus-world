@@ -124,7 +124,7 @@ export default function Profile() {
                                     <div>
                                         <h2 className="v5-hub-name">{activeCharacter.name.toUpperCase()}</h2>
                                         <div className="v5-hub-meta">
-                                            {activeCharacter.class.toUpperCase()} • {activeCharacter.alignment.toUpperCase()} • {activeCharacter.completedQuests?.length || 0} EXPLOITS
+                                            {activeCharacter.class.toUpperCase()} • {activeCharacter.alignment.toUpperCase()} • {activeCharacter.completedQuests?.length || 0} SUCCES
                                         </div>
                                     </div>
                                 </>

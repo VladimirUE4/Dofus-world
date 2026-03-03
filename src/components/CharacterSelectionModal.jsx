@@ -5,10 +5,20 @@ export default function CharacterSelectionModal({ isOpen, onClose, onAddCharacte
     const { characters, activeCharacter, setActiveCharacterId, deleteCharacter } = useCharacter();
     const [hoveredChar, setHoveredChar] = useState(null);
 
-    // Initial hover state
+    // Initial hover state & Reset
     useEffect(() => {
-        if (activeCharacter) setHoveredChar(activeCharacter);
-        else if (characters.length > 0) setHoveredChar(characters[0]);
+        if (!isOpen) {
+            setHoveredChar(null);
+            return;
+        }
+
+        if (activeCharacter) {
+            setHoveredChar(activeCharacter);
+        } else if (characters.length > 0) {
+            setHoveredChar(characters[0]);
+        } else {
+            setHoveredChar(null);
+        }
     }, [activeCharacter, characters, isOpen]);
 
     if (!isOpen) return null;
@@ -92,7 +102,7 @@ export default function CharacterSelectionModal({ isOpen, onClose, onAddCharacte
                                         </div>
                                     </div>
                                     <div className="v5-stat-card">
-                                        <span className="v5-stat-label">EXPLOITS</span>
+                                        <span className="v5-stat-label">SUCCES</span>
                                         <span className="v5-stat-value">{displayChar.completedQuests?.length || 0} QUÊTES</span>
                                     </div>
                                 </div>

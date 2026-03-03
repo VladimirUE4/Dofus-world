@@ -70,8 +70,12 @@ function QuestItem({ quest, completed, onToggle, trackedMembersCompleted }) {
                     {trackedMembersCompleted && trackedMembersCompleted.length > 0 && (
                         <div className="quest-member-avatars">
                             {trackedMembersCompleted.map(member => (
-                                <div key={member.id} className="quest-member-avatar" title={`${member.name} a terminé cette quête`}>
-                                    {member.name.charAt(0).toUpperCase()}
+                                <div key={member.id} className="quest-member-avatar" title={`${member.name} a terminé cette quête`} style={{ background: 'none', padding: 0, overflow: 'hidden', border: '1px solid var(--v5-border)' }}>
+                                    <img
+                                        src={`/assets/images/classes/${member.className}_${member.sex}.png`}
+                                        alt=""
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -139,100 +143,76 @@ export default function Guide() {
         return unsub
     }, [currentUser])
 
-    // Real-time sync for Guild Members
+    // Combined real-time sync for Guild & Members
     useEffect(() => {
-        if (!userGuildId) {
+        if (!userGuildId || !currentUser) {
             setGuildMembers([])
             setTrackedMemberIds([])
             return
         }
 
-        const unsubGuild = onSnapshot(doc(db, 'guilds', userGuildId), async (guildSnap) => {
-            if (guildSnap.exists()) {
-                const memberIds = guildSnap.data().members || []
+        let isMounted = true
+        let memberUnsubs = []
 
-                // Fetch profiles of all members except the current user
-                const membersData = []
-                for (const mId of memberIds) {
-                    if (mId === currentUser.uid) continue; // Don't track self
-                    // We set up a listener for EACH member to see real-time quest updates
-                    // Note: In a massive app, you might want to limit this or do it differently,
-                    // but for a small guild, listening to members is fine.
-                    // For simplicity, we can fetch once per guild update, or better, set up individual listeners.
-                }
+        const cleanupMembers = () => {
+            memberUnsubs.forEach(unsub => unsub())
+            memberUnsubs = []
+        }
+
+        const unsubGuild = onSnapshot(doc(db, 'guilds', userGuildId), (guildSnap) => {
+            if (!isMounted) return
+            if (!guildSnap.exists()) {
+                setGuildMembers([])
+                return
             }
-        })
-        return unsubGuild
-    }, [userGuildId, currentUser])
 
-    // Let's set up individual listeners for guild members correctly
-    useEffect(() => {
-        if (!userGuildId) return;
+            cleanupMembers()
+            const memberInfos = guildSnap.data().members || []
+            const otherMembers = memberInfos.filter(m => (typeof m === 'string' ? m : m.uid) !== currentUser.uid)
 
-        // Fetch the guild doc to get member IDs
-        const initGuildMembers = async () => {
-            const guildDoc = await getDoc(doc(db, 'guilds', userGuildId));
-            if (!guildDoc.exists()) return;
-
-            const memberInfos = guildDoc.data().members || [];
-            const otherMembers = memberInfos.filter(m => (typeof m === 'string' ? m : m.uid) !== currentUser.uid);
-
-            const unsubs = [];
-
-            setGuildMembers(current => {
-                return otherMembers.map(m => {
-                    const uid = typeof m === 'string' ? m : m.uid;
-                    return { id: uid, name: 'Loading...', completedQuests: [] };
-                });
-            });
+            // Pre-seed members list to avoid empty state flash
+            setGuildMembers(otherMembers.map(m => ({
+                id: typeof m === 'string' ? m : m.uid,
+                name: 'Chargement...',
+                completedQuests: []
+            })))
 
             otherMembers.forEach(mInfo => {
-                const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid;
-                const charId = typeof mInfo === 'string' ? null : mInfo.charId;
+                const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid
+                const charId = typeof mInfo === 'string' ? null : mInfo.charId
 
-                const unsub = onSnapshot(doc(db, 'users', uid), (snap) => {
-                    if (snap.exists()) {
-                        const mData = snap.data();
-                        const char = charId
-                            ? (mData.characters || []).find(c => c.id === charId)
-                            : (mData.characters?.[0] || null);
+                const unsubMem = onSnapshot(doc(db, 'users', uid), (mSnap) => {
+                    if (!isMounted || !mSnap.exists()) return
 
-                        const quests = char?.completedQuests || mData.completedQuests || [];
-                        const charName = char?.name || mData.displayName || 'Inconnu';
-                        const className = char?.class || 'iop';
-                        const sex = char?.sex || 'm';
+                    const mData = mSnap.data()
+                    const char = charId
+                        ? (mData.characters || []).find(c => c.id === charId)
+                        : (mData.characters?.[0] || null)
 
-                        setGuildMembers(prev => {
-                            const newMembers = [...prev];
-                            const idx = newMembers.findIndex(m => m.id === uid);
-                            const memberData = {
-                                id: uid,
-                                name: charName,
-                                charName,
-                                className,
-                                sex,
-                                completedQuests: quests
-                            };
-                            if (idx >= 0) {
-                                newMembers[idx] = memberData;
-                            } else {
-                                newMembers.push(memberData);
-                            }
-                            return newMembers;
-                        });
-                    }
-                });
-                unsubs.push(unsub);
-            });
+                    const quests = char?.completedQuests || mData.completedQuests || []
+                    const charName = char?.name || mData.displayName || 'Inconnu'
 
-            return () => { unsubs.forEach(u => u()); };
-        };
+                    setGuildMembers(prev => prev.map(m =>
+                        m.id === uid ? {
+                            ...m,
+                            name: charName,
+                            charName: charName,
+                            className: char?.class || 'iop',
+                            sex: char?.sex || 'm',
+                            completedQuests: quests
+                        } : m
+                    ))
+                })
+                memberUnsubs.push(unsubMem)
+            })
+        })
 
-        const cleanupPromise = initGuildMembers();
         return () => {
-            cleanupPromise.then(cleanup => { if (cleanup) cleanup(); });
-        };
-    }, [userGuildId, currentUser]);
+            isMounted = false
+            unsubGuild()
+            cleanupMembers()
+        }
+    }, [userGuildId, currentUser])
 
 
     const handleToggle = useCallback(async (questId) => {
@@ -429,7 +409,12 @@ export default function Guide() {
                         const trackedMembersCompleted = guildMembers
                             .filter(m => trackedMemberIds.includes(m.id))
                             .filter(m => m.completedQuests.includes(item.id))
-                            .map(m => ({ id: m.id, name: m.name }));
+                            .map(m => ({
+                                id: m.id,
+                                name: m.name,
+                                className: m.className || 'iop',
+                                sex: m.sex || 'm'
+                            }));
 
                         return (
                             <QuestItem

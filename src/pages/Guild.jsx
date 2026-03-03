@@ -71,66 +71,97 @@ export default function Guild() {
     const [success, setSuccess] = useState('')
     const [actionLoading, setActionLoading] = useState(false)
 
-    // Listen to user data
+    // 1. Listen to User Data
     useEffect(() => {
-        if (!currentUser) return
-        const unsub = onSnapshot(doc(db, 'users', currentUser.uid), async (snap) => {
-            if (!snap.exists()) return
-            const data = { id: snap.id, ...snap.data() }
-            setUserData(data)
+        if (!currentUser) {
+            setUserData(null)
+            setGuildData(null)
+            setMembers([])
+            setLoading(false)
+            return
+        }
 
-            if (data.guildId) {
-                listenToGuild(data.guildId)
+        const unsubUser = onSnapshot(doc(db, 'users', currentUser.uid), (snap) => {
+            if (snap.exists()) {
+                setUserData({ id: snap.id, ...snap.data() })
             } else {
-                setGuildData(null)
-                setMembers([])
                 setLoading(false)
             }
         })
-        return unsub
+        return unsubUser
     }, [currentUser])
 
-    function listenToGuild(guildId) {
-        const unsub = onSnapshot(doc(db, 'guilds', guildId), async (snap) => {
+    // 2. Listen to Guild & Members
+    useEffect(() => {
+        const guildId = userData?.guildId
+        if (!guildId || !currentUser) {
+            setGuildData(null)
+            setMembers([])
+            // If userData exists but no guildId, then we are not loading anymore
+            if (userData || !currentUser) setLoading(false)
+            return
+        }
+
+        let isMounted = true
+        let memberUnsubs = []
+
+        const cleanupMembers = () => {
+            memberUnsubs.forEach(u => u())
+            memberUnsubs = []
+        }
+
+        const unsubGuild = onSnapshot(doc(db, 'guilds', guildId), (snap) => {
+            if (!isMounted) return
             if (!snap.exists()) {
                 setGuildData(null)
+                setMembers([])
                 setLoading(false)
                 return
             }
+
             const guild = { id: snap.id, ...snap.data() }
             setGuildData(guild)
 
-            const memberUnsubs = []
-            const memberMap = {}
-            const updateMembers = () => setMembers(Object.values(memberMap))
+            // Cleanup old member listeners before setting up new ones
+            cleanupMembers()
 
-            for (const mInfo of guild.members || []) {
+            const memberMap = {}
+            const guildMembers = guild.members || []
+
+            if (guildMembers.length === 0) {
+                setMembers([])
+                setLoading(false)
+                return
+            }
+
+            guildMembers.forEach(mInfo => {
                 const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid
                 const charId = typeof mInfo === 'string' ? null : mInfo.charId
 
                 const mu = onSnapshot(doc(db, 'users', uid), (mSnap) => {
-                    if (mSnap.exists()) {
-                        const mData = mSnap.data()
-                        // Resolve character
-                        const character = charId
-                            ? (mData.characters || []).find(c => c.id === charId)
-                            : (mData.characters?.[0] || null) // Fallback to first character for legacy
+                    if (!isMounted || !mSnap.exists()) return
 
-                        memberMap[uid] = {
-                            uid,
-                            ...mData,
-                            character
-                        }
-                        updateMembers()
-                    }
+                    const mData = mSnap.data()
+                    const character = charId
+                        ? (mData.characters || []).find(c => c.id === charId)
+                        : (mData.characters?.[0] || null)
+
+                    memberMap[uid] = { uid, ...mData, character }
+
+                    // Update main members list
+                    setMembers(Object.values(memberMap))
+                    setLoading(false)
                 })
                 memberUnsubs.push(mu)
-            }
-            setLoading(false)
-            return () => memberUnsubs.forEach(u => u())
+            })
         })
-        return unsub
-    }
+
+        return () => {
+            isMounted = false
+            unsubGuild()
+            cleanupMembers()
+        }
+    }, [userData?.guildId, currentUser])
 
     async function handleCreateGuild(e) {
         e.preventDefault()
