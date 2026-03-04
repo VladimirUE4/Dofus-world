@@ -6,6 +6,7 @@ import {
     arrayUnion, arrayRemove, onSnapshot, collection, query, where, getDocs
 } from 'firebase/firestore'
 import { db } from '../firebase'
+import guildBg from '../images/5.jpg'
 
 const TOTAL_QUESTS = 1374
 
@@ -313,77 +314,108 @@ export default function Guild() {
     }
 
     return (
-        <div className="fade-in-up">
-            <div className="page-header">
-                <h1 className="page-title">Guilde</h1>
-                <p className="page-subtitle">Rejoignez ou créez une guilde pour comparer votre progression.</p>
-            </div>
+        <div className="fade-in-up" style={{
+            position: 'relative',
+            width: '100vw',
+            marginLeft: 'calc(50% - 50vw)',
+            marginTop: '-40px',
+            overflow: 'hidden',
+            minHeight: '70vh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            padding: '40px',
+            color: 'white'
+        }}>
+            {/* Background Image with Gradient Fade */}
+            <div style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `url(${guildBg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                zIndex: 0
+            }}></div>
+            <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to bottom, rgba(10,10,12,0.2) 0%, rgba(10,10,12,0.95) 100%)',
+                zIndex: 1
+            }}></div>
 
-            <div className="tabs">
-                <button
-                    className={`tab-btn${tab === 'create' ? ' active' : ''}`}
-                    onClick={() => { setTab('create'); setError(''); setSuccess('') }}
-                >
-                    Créer une guilde
-                </button>
-                <button
-                    className={`tab-btn${tab === 'join' ? ' active' : ''}`}
-                    onClick={() => { setTab('join'); setError(''); setSuccess('') }}
-                >
-                    Rejoindre une guilde
-                </button>
-            </div>
-
-            {error && <div className="alert alert-error">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
-
-            {tab === 'create' && (
-                <div className="card">
-                    <h2 className="card-title">Nouvelle Guilde</h2>
-                    <p className="card-subtitle">Un code d'invitation vous sera attribué.</p>
-                    <form onSubmit={handleCreateGuild}>
-                        <div className="form-group">
-                            <label className="form-label">Nom de la guilde</label>
-                            <input
-                                type="text"
-                                className="form-input"
-                                placeholder="Exénom..."
-                                value={createName}
-                                onChange={e => setCreateName(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-primary" disabled={actionLoading}>
-                            Créer la guilde
-                        </button>
-                    </form>
+            <div style={{ position: 'relative', zIndex: 2, maxWidth: '600px', margin: '0 auto', width: '100%', textAlign: 'center' }}>
+                <div style={{ marginBottom: '32px' }}>
+                    <h1 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '16px', textShadow: '0 2px 10px rgba(0,0,0,0.5)', fontFamily: 'var(--font-display)' }}>Votre Guilde</h1>
+                    <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.8)' }}>Rejoignez vos amis ou créez votre propre alliance pour comparer votre progression et conquérir ensemble.</p>
                 </div>
-            )}
 
-            {tab === 'join' && (
-                <div className="card">
-                    <h2 className="card-title">Rejoindre</h2>
-                    <p className="card-subtitle">Entrez le code d'invitation fourni par un membre.</p>
-                    <form onSubmit={handleJoinGuild}>
-                        <div className="form-group">
-                            <label className="form-label">Code d'invitation</label>
-                            <input
-                                type="text"
-                                className="form-input"
-                                placeholder="ABCDEF"
-                                maxLength={6}
-                                value={joinCode}
-                                onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                                style={{ letterSpacing: '0.2em', fontSize: '1.2rem', textTransform: 'uppercase' }}
-                                required
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-secondary" disabled={actionLoading}>
-                            Rejoindre
-                        </button>
-                    </form>
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                    <button
+                        className="btn-premium"
+                        style={{ padding: '16px 32px', fontSize: '1.1rem', flex: 1, maxWidth: '250px' }}
+                        onClick={() => { setTab('create'); setError(''); setSuccess('') }}
+                    >
+                        Créer une guilde
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ padding: '16px 32px', fontSize: '1.1rem', flex: 1, maxWidth: '250px', backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}
+                        onClick={() => { setTab('join'); setError(''); setSuccess('') }}
+                    >
+                        Rejoindre
+                    </button>
                 </div>
-            )}
+
+                {error && <div className="alert alert-error" style={{ marginTop: '24px' }}>{error}</div>}
+                {success && <div className="alert alert-success" style={{ marginTop: '24px' }}>{success}</div>}
+
+                {tab === 'create' && (
+                    <div className="card fade-in" style={{ marginTop: '32px', backgroundColor: 'var(--v5-surface)', textAlign: 'left' }}>
+                        <h2 className="card-title">Nouvelle Guilde</h2>
+                        <form onSubmit={handleCreateGuild}>
+                            <div className="form-group">
+                                <label className="form-label">Nom de la guilde</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Ex: Les Bouftous Soyeux..."
+                                    value={createName}
+                                    onChange={e => setCreateName(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="btn btn-primary" disabled={actionLoading}>
+                                Fonder la guilde
+                            </button>
+                        </form>
+                    </div>
+                )}
+
+                {tab === 'join' && (
+                    <div className="card fade-in" style={{ marginTop: '32px', backgroundColor: 'var(--v5-surface)', textAlign: 'left' }}>
+                        <h2 className="card-title">Rejoindre une guilde</h2>
+                        <form onSubmit={handleJoinGuild}>
+                            <div className="form-group">
+                                <label className="form-label">Code d'invitation</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="ABCDEF"
+                                    maxLength={6}
+                                    value={joinCode}
+                                    onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                                    style={{ letterSpacing: '0.2em', fontSize: '1.2rem', textTransform: 'uppercase', textAlign: 'center' }}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="btn btn-secondary btn-full" disabled={actionLoading}>
+                                Rejoindre
+                            </button>
+                        </form>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

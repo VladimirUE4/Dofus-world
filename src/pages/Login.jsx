@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import loginBg from '../images/1489512202-5523-artwork.webp'
 
 export default function Login() {
-    const { login } = useAuth()
+    const { login, loginWithGoogle } = useAuth()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
@@ -18,6 +18,17 @@ export default function Login() {
             await login(email, password)
         } catch (err) {
             setError('Email ou mot de passe incorrect. Réessayez.')
+        }
+        setLoading(false)
+    }
+
+    async function handleGoogleLogin() {
+        setError('')
+        setLoading(true)
+        try {
+            await loginWithGoogle()
+        } catch (err) {
+            setError('Erreur lors de la connexion avec Google.')
         }
         setLoading(false)
     }
@@ -84,6 +95,21 @@ export default function Login() {
                             {loading ? 'Connexion en cours...' : 'Se connecter'}
                         </button>
                     </form>
+
+                    <div className="auth-divider">Ou</div>
+
+                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                        <button
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            className="btn btn-secondary btn-full"
+                            style={{ padding: '14px 24px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--v5-surface)', border: '1px solid var(--v5-border)' }}
+                            disabled={loading}
+                        >
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: '20px', height: '20px' }} />
+                            Continuer avec Google
+                        </button>
+                    </div>
 
                     <div className="auth-divider">Nouveau par ici ?</div>
 

@@ -5,6 +5,8 @@ import {
     signOut,
     onAuthStateChanged,
     updateProfile,
+    signInWithPopup,
+    GoogleAuthProvider
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../firebase'
@@ -37,6 +39,24 @@ export function AuthProvider({ children }) {
         return signInWithEmailAndPassword(auth, email, password)
     }
 
+    async function loginWithGoogle() {
+        const provider = new GoogleAuthProvider()
+        const result = await signInWithPopup(auth, provider)
+        const user = result.user
+
+        const snap = await getDoc(doc(db, 'users', user.uid))
+        if (!snap.exists()) {
+            await setDoc(doc(db, 'users', user.uid), {
+                displayName: user.displayName || 'Joueur',
+                email: user.email,
+                guildId: null,
+                completedQuests: [],
+                createdAt: serverTimestamp(),
+            })
+        }
+        return user
+    }
+
     function logout() {
         return signOut(auth)
     }
@@ -67,6 +87,7 @@ export function AuthProvider({ children }) {
         setUserData,
         register,
         login,
+        loginWithGoogle,
         logout,
         fetchUserData,
     }

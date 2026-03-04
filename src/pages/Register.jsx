@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import registerBg from '../images/1489514696-7289-artwork.webp'
 
 export default function Register() {
-    const { register } = useAuth()
+    const { register: registerEmail, loginWithGoogle } = useAuth()
     const [displayName, setDisplayName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -29,13 +29,24 @@ export default function Register() {
         }
         setLoading(true)
         try {
-            await register(email, password, displayName.trim())
+            await registerEmail(email, password, displayName.trim())
         } catch (err) {
             if (err.code === 'auth/email-already-in-use') {
                 setError('Cet email est déjà utilisé.')
             } else {
                 setError('Erreur lors de la création du compte.')
             }
+        }
+        setLoading(false)
+    }
+
+    async function handleGoogleLogin() {
+        setError('')
+        setLoading(true)
+        try {
+            await loginWithGoogle()
+        } catch (err) {
+            setError('Erreur lors de la connexion avec Google.')
         }
         setLoading(false)
     }
@@ -121,6 +132,21 @@ export default function Register() {
                             {loading ? 'Création en cours...' : 'Créer mon compte'}
                         </button>
                     </form>
+
+                    <div className="auth-divider">Ou</div>
+
+                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                        <button
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            className="btn btn-secondary btn-full"
+                            style={{ padding: '14px 24px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--v5-surface)', border: '1px solid var(--v5-border)' }}
+                            disabled={loading}
+                        >
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: '20px', height: '20px' }} />
+                            Continuer avec Google
+                        </button>
+                    </div>
 
                     <div className="auth-divider">Déjà membre ?</div>
 
