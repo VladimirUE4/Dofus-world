@@ -412,7 +412,7 @@ export default function Guide() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Affichage de {filteredQuests.length} quête(s)
+                    Affichage de {filteredQuests.filter(q => q.type === 'quest').length} quête(s)
                     {updating && <span style={{ marginLeft: '8px', color: 'var(--primary)' }}>Sauvegarde en cours...</span>}
                 </div>
                 {currentQuests.some(q => q.type === 'quest' && !completedQuests.includes(q.id)) && (

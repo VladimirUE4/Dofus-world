@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCharacter } from '../contexts/CharacterContext'
-import { doc, onSnapshot } from 'firebase/firestore'
+import { doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 
 function ProgressBar({ pct, label }) {
@@ -128,7 +128,7 @@ export default function Dashboard() {
                     {guildData ? (
                         <>
                             <div className="card-subtitle" style={{ marginBottom: '16px' }}>
-                                {guildData.name} — {guildMembers.length} membre{guildMembers.length > 1 ? 's' : ''}
+                                {guildData.name} — {guildData.members?.length || 0} membre{(guildData.members?.length || 0) > 1 ? 's' : ''}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {guildMembers.map(member => {
