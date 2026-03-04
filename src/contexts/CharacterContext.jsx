@@ -111,6 +111,17 @@ export function CharacterProvider({ children }) {
         })
     }
 
+    async function checkMultipleQuests(questIds) {
+        if (!activeCharacter || !currentUser) return
+
+        const currentCompleted = activeCharacter.completedQuests || []
+        const newCompleted = Array.from(new Set([...currentCompleted, ...questIds]))
+
+        await updateCharacter(activeCharacter.id, {
+            completedQuests: newCompleted
+        })
+    }
+
     const value = {
         characters,
         activeCharacter,
@@ -120,6 +131,7 @@ export function CharacterProvider({ children }) {
         updateCharacter,
         deleteCharacter,
         toggleQuest,
+        checkMultipleQuests,
         loading
     }
 

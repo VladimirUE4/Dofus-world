@@ -111,10 +111,11 @@ function QuestItem({ quest, completed, onToggle, trackedMembersCompleted }) {
 
 export default function Guide() {
     const { currentUser } = useAuth()
-    const { activeCharacter, toggleQuest } = useCharacter()
+    const { activeCharacter, toggleQuest, checkMultipleQuests } = useCharacter()
     const [filter, setFilter] = useState('all')
     const [search, setSearch] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
+    const [pageInput, setPageInput] = useState('1')
     const [updating, setUpdating] = useState(false)
     const itemsPerPage = 50
 
@@ -268,6 +269,11 @@ export default function Guide() {
         setCurrentPage(1)
     }, [filter, search])
 
+    // Sync pageInput with currentPage
+    useEffect(() => {
+        setPageInput(currentPage.toString())
+    }, [currentPage])
+
     // Scroll to top when page changes (pagination)
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -278,6 +284,22 @@ export default function Guide() {
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     )
+
+    const handleCheckAllOnPage = useCallback(async () => {
+        if (!checkMultipleQuests) return;
+        const questsToCheck = currentQuests
+            .filter(item => item.type === 'quest' && !completedQuests.includes(item.id))
+            .map(item => item.id);
+
+        if (questsToCheck.length === 0) return;
+
+        setUpdating(true)
+        try {
+            await checkMultipleQuests(questsToCheck)
+        } finally {
+            setUpdating(false)
+        }
+    }, [currentQuests, completedQuests, checkMultipleQuests])
 
     const progressPct = TOTAL === 0 ? 0 : Math.round((completedQuests.length / TOTAL) * 100)
 
@@ -388,9 +410,21 @@ export default function Guide() {
                 </div>
             )}
 
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                Affichage de {filteredQuests.length} quête(s)
-                {updating && <span style={{ marginLeft: '8px', color: 'var(--primary)' }}>Sauvegarde en cours...</span>}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Affichage de {filteredQuests.length} quête(s)
+                    {updating && <span style={{ marginLeft: '8px', color: 'var(--primary)' }}>Sauvegarde en cours...</span>}
+                </div>
+                {currentQuests.some(q => q.type === 'quest' && !completedQuests.includes(q.id)) && (
+                    <button
+                        className="btn btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                        onClick={handleCheckAllOnPage}
+                        disabled={updating}
+                    >
+                        Tout cocher sur la page
+                    </button>
+                )}
             </div>
 
             {/* Quest List */}
@@ -443,9 +477,29 @@ export default function Guide() {
                     >
                         Précédent
                     </button>
-                    <span className="page-info">
-                        Page {currentPage} sur {totalPages}
-                    </span>
+                    <div className="page-info" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Page
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const p = parseInt(pageInput);
+                            if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                                setCurrentPage(p);
+                            } else {
+                                setPageInput(currentPage.toString());
+                            }
+                        }}>
+                            <input
+                                type="number"
+                                value={pageInput}
+                                onChange={(e) => setPageInput(e.target.value)}
+                                onBlur={() => setPageInput(currentPage.toString())}
+                                min={1}
+                                max={totalPages}
+                                style={{ width: '50px', textAlign: 'center', padding: '4px', borderRadius: '4px', border: '1px solid var(--v5-border)', background: 'var(--v5-surface)', color: 'var(--text-primary)' }}
+                            />
+                        </form>
+                        sur {totalPages}
+                    </div>
                     <button
                         className="page-btn"
                         disabled={currentPage === totalPages}
