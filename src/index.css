@@ -882,38 +882,99 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  margin-top: 32px;
-  padding: 16px;
+  gap: 16px;
+  margin-top: 40px;
+  padding: 24px;
 }
 
 .page-btn {
-  padding: 8px 16px;
-  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .page-btn:hover:not(:disabled) {
-  background: var(--bg-secondary);
-  border-color: var(--text-muted);
+  background: rgba(79, 128, 255, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(79, 128, 255, 0.15);
+}
+
+.page-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .page-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
 }
 
 .page-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 0.95rem;
-  color: var(--text-secondary);
   font-weight: 500;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.page-input-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.page-info input {
+  width: 50px;
+  text-align: center;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.page-info input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(79, 128, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(79, 128, 255, 0.1);
+}
+
+/* Hide number input arrows */
+.page-info input::-webkit-outer-spin-button,
+.page-info input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.page-info input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* === PAGE HEADER === */

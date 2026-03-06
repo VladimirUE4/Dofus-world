@@ -58,7 +58,6 @@ function QuestItem({ quest, completed, onToggle, trackedMembersCompleted }) {
                     </div>
 
                     <span className="quest-level-badge">Lvl {quest.questLevel}</span>
-
                     <div className="quest-dataset-images">
                         {images.map((imgUrl, idx) => (
                             <img key={idx} src={imgUrl} alt="" className="quest-dataset-img" />
@@ -279,11 +278,40 @@ export default function Guide() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }, [currentPage])
 
-    const totalPages = Math.ceil(filteredQuests.length / itemsPerPage)
-    const currentQuests = filteredQuests.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    )
+    const pages = useMemo(() => {
+        const result = [];
+        let currentPageChunk = [];
+
+        for (let i = 0; i < filteredQuests.length; i++) {
+            const item = filteredQuests[i];
+
+            // If it's a category and the current chunk is getting large (e.g. > itemsPerPage * 0.7),
+            // OR if it's the very first item, we consider making a page break.
+            if (item.type === 'category' && currentPageChunk.length >= 20) {
+                // Time to break the page before this category, so the new page starts with it
+                result.push(currentPageChunk);
+                currentPageChunk = [item];
+            } else {
+                currentPageChunk.push(item);
+            }
+
+            // Hard limit: if we're way over itemsPerPage without hitting a category, force break anyway
+            // but ideally the dataset has enough categories to naturally chunk it.
+            if (currentPageChunk.length >= itemsPerPage * 2) {
+                result.push(currentPageChunk);
+                currentPageChunk = [];
+            }
+        }
+
+        if (currentPageChunk.length > 0) {
+            result.push(currentPageChunk);
+        }
+
+        return result;
+    }, [filteredQuests]);
+
+    const totalPages = Math.max(1, pages.length)
+    const currentQuests = pages[currentPage - 1] || []
 
     const handleCheckAllOnPage = useCallback(async () => {
         if (!checkMultipleQuests) return;
@@ -477,9 +505,9 @@ export default function Guide() {
                     >
                         Précédent
                     </button>
-                    <div className="page-info" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="page-info">
                         Page
-                        <form onSubmit={(e) => {
+                        <form className="page-input-wrapper" onSubmit={(e) => {
                             e.preventDefault();
                             const p = parseInt(pageInput);
                             if (!isNaN(p) && p >= 1 && p <= totalPages) {
@@ -495,7 +523,6 @@ export default function Guide() {
                                 onBlur={() => setPageInput(currentPage.toString())}
                                 min={1}
                                 max={totalPages}
-                                style={{ width: '50px', textAlign: 'center', padding: '4px', borderRadius: '4px', border: '1px solid var(--v5-border)', background: 'var(--v5-surface)', color: 'var(--text-primary)' }}
                             />
                         </form>
                         sur {totalPages}

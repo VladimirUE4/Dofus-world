@@ -9012,6 +9012,15 @@
     "timestamp": 1772574906108
   },
   {
+    "type": "category",
+    "step": "Etape 616",
+    "title": "Tour du Monde. Passer l'étape du Kimbo pour le Turquoise",
+    "image": "/assets/images/json/quest-categories_tdm.jpg",
+    "bossImages": [],
+    "page": "https://www.dofusplanet.fr/guide-opti#",
+    "timestamp": 1772574909679
+  },
+  {
     "type": "quest",
     "id": "188",
     "stepId": "689",
@@ -9029,21 +9038,33 @@
   },
   {
     "type": "category",
-    "step": "Etape 616",
-    "title": "Tour du Monde. Passer l'étape du Kimbo pour le Turquoise",
-    "image": "/assets/images/json/quest-categories_tdm.jpg",
-    "bossImages": [],
-    "page": "https://www.dofusplanet.fr/guide-opti#",
-    "timestamp": 1772574909679
-  },
-  {
-    "type": "category",
     "step": "Etape 618",
     "title": "Dofus Turquoise - Partie 4. Initialiser la dernière session de donjons sous idoles",
     "image": "/assets/images/json/quest-categories_turquoise.jpg",
     "bossImages": [],
     "page": "https://www.dofusplanet.fr/guide-opti#",
     "timestamp": 1772574909679
+  },
+  {
+    "type": "quest",
+    "id": "1364",
+    "stepId": "690",
+    "name": "La bénédiction de Thomahon",
+    "link": "https://www.dofuspourlesnoobs.com/la-beacuteneacutediction-de-thomahon.html",
+    "questLevel": "150",
+    "description": "Finissez la quete.",
+    "images": [
+      "/assets/images/json/icons_quest_book2.png",
+      "/assets/images/json/icons_skull.png"
+    ],
+    "bossImages": [
+      "/assets/images/json/x1000_1045.png",
+      "/assets/images/json/x1000_943.png",
+      "/assets/images/json/x1000_2877.png",
+      "/assets/images/json/x1000_2924.png"
+    ],
+    "page": "https://www.dofusplanet.fr/guide-opti#",
+    "timestamp": 1772574906106
   },
   {
     "type": "quest",
