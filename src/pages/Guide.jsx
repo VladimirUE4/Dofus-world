@@ -1,26 +1,50 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useCharacter } from '../contexts/CharacterContext'
-import { doc, getDoc, onSnapshot } from 'firebase/firestore'
+import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
-import brakmarQuests from '../../dofus_dataset(2).json'
-import bontaQuests from '../../dofus_dataset(22).json'
+import brakmarQuests from '../../guideopti_brakmar.json'
+import bontaQuests from '../../guideopti_bonta.json'
 
-const prepareQuests = (raw) => raw.map((q, idx) => ({ ...q, originalIndex: idx }));
+const prepareQuests = (raw) => raw.map((q, idx) => ({ ...q, originalIndex: idx }))
 
-const BRAKMAR_QUESTS = prepareQuests(brakmarQuests);
-const BONTA_QUESTS = prepareQuests(bontaQuests);
+const BRAKMAR_QUESTS = prepareQuests(brakmarQuests)
+const BONTA_QUESTS = prepareQuests(bontaQuests)
+
+// Build pagelevel → first-step mapping from raw data
+function buildPageLevels(rawData) {
+    const levels = []        // [{ level, firstStepId }]
+    let current = 1
+    let firstOfCurrent = null
+
+    for (const item of rawData) {
+        if (item.type === 'quest') {
+            if (firstOfCurrent === null) firstOfCurrent = item.id
+            if (item.pagelevel) {
+                levels.push({ level: current, firstStepId: firstOfCurrent })
+                current = parseInt(item.pagelevel, 10)
+                firstOfCurrent = null
+            }
+        }
+    }
+    if (firstOfCurrent !== null) levels.push({ level: current, firstStepId: firstOfCurrent })
+
+    return levels  // sorted by appearance order (level values ascend naturally)
+}
+
+const BONTA_PAGE_LEVELS = buildPageLevels(bontaQuests)
+const BRAKMAR_PAGE_LEVELS = buildPageLevels(brakmarQuests)
+
+const SCROLL_KEY_GUIDE = 'guide_scroll_page'
 
 function CategoryItem({ category }) {
-    // Extract description from title if it follows "Title : description"
-    let displayTitle = category.title;
-    let desc = '';
-    const splitIndex = category.title.indexOf(' : ');
+    let displayTitle = category.title
+    let desc = ''
+    const splitIndex = category.title.indexOf(' : ')
     if (splitIndex !== -1) {
-        displayTitle = category.title.substring(0, splitIndex);
-        desc = category.title.substring(splitIndex + 3);
+        displayTitle = category.title.substring(0, splitIndex)
+        desc = category.title.substring(splitIndex + 3)
     }
-
     return (
         <div className="category-card">
             <div className="category-image-wrap">
@@ -41,10 +65,7 @@ function QuestItem({ quest, completed, onToggle, trackedMembersCompleted }) {
 
     return (
         <div className="quest-row">
-            <div
-                className={`quest-item${completed ? ' completed' : ''}`}
-                onClick={() => onToggle(quest.id)}
-            >
+            <div className={`quest-item${completed ? ' completed' : ''}`} onClick={() => onToggle(quest.id)}>
                 <div className="quest-main-info">
                     <div className="quest-checkbox-wrapper">
                         <input
@@ -70,30 +91,18 @@ function QuestItem({ quest, completed, onToggle, trackedMembersCompleted }) {
                         <div className="quest-member-avatars">
                             {trackedMembersCompleted.map(member => (
                                 <div key={member.id} className="quest-member-avatar" title={`${member.name} a terminé cette quête`} style={{ background: 'none', padding: 0, overflow: 'hidden', border: '1px solid var(--v5-border)' }}>
-                                    <img
-                                        src={`/assets/images/classes/${member.className}_${member.sex}.png`}
-                                        alt=""
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
+                                    <img src={`/assets/images/classes/${member.className}_${member.sex}.png`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    <a
-                        href={quest.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="quest-link"
-                        onClick={e => e.stopPropagation()}
-                    >
+                    <a href={quest.link} target="_blank" rel="noopener noreferrer" className="quest-link" onClick={e => e.stopPropagation()}>
                         Ouvrir le guide
                     </a>
                 </div>
                 {quest.description && (
-                    <div className="quest-description">
-                        {quest.description}
-                    </div>
+                    <div className="quest-description">{quest.description}</div>
                 )}
             </div>
 
@@ -113,15 +122,24 @@ export default function Guide() {
     const { activeCharacter, toggleQuest, checkMultipleQuests } = useCharacter()
     const [filter, setFilter] = useState('all')
     const [search, setSearch] = useState('')
-    const [currentPage, setCurrentPage] = useState(1)
-    const [pageInput, setPageInput] = useState('1')
+    const [currentPage, setCurrentPage] = useState(() => {
+        const saved = localStorage.getItem(SCROLL_KEY_GUIDE)
+        return saved ? parseInt(saved, 10) : 1
+    })
     const [updating, setUpdating] = useState(false)
+    const [selectedPageLevel, setSelectedPageLevel] = useState('all')
+    const scrollSaveTimer = useRef(null)
     const itemsPerPage = 50
 
     // Selected Dataset based on alignment
     const QUESTS = useMemo(() => {
         if (!activeCharacter) return []
         return activeCharacter.alignment === 'bonta' ? BONTA_QUESTS : BRAKMAR_QUESTS
+    }, [activeCharacter])
+
+    const PAGE_LEVELS = useMemo(() => {
+        if (!activeCharacter) return []
+        return activeCharacter.alignment === 'bonta' ? BONTA_PAGE_LEVELS : BRAKMAR_PAGE_LEVELS
     }, [activeCharacter])
 
     const TOTAL = useMemo(() => QUESTS.filter(q => q.type === 'quest').length, [QUESTS])
@@ -136,46 +154,29 @@ export default function Guide() {
     useEffect(() => {
         if (!currentUser) return
         const unsub = onSnapshot(doc(db, 'users', currentUser.uid), (snap) => {
-            if (snap.exists()) {
-                setUserGuildId(snap.data().guildId || null)
-            }
+            if (snap.exists()) setUserGuildId(snap.data().guildId || null)
         })
         return unsub
     }, [currentUser])
 
     // Combined real-time sync for Guild & Members
     useEffect(() => {
-        if (!userGuildId || !currentUser) {
-            setGuildMembers([])
-            setTrackedMemberIds([])
-            return
-        }
+        if (!userGuildId || !currentUser) { setGuildMembers([]); setTrackedMemberIds([]); return }
 
         let isMounted = true
         let memberUnsubs = []
 
-        const cleanupMembers = () => {
-            memberUnsubs.forEach(unsub => unsub())
-            memberUnsubs = []
-        }
+        const cleanupMembers = () => { memberUnsubs.forEach(u => u()); memberUnsubs = [] }
 
         const unsubGuild = onSnapshot(doc(db, 'guilds', userGuildId), (guildSnap) => {
             if (!isMounted) return
-            if (!guildSnap.exists()) {
-                setGuildMembers([])
-                return
-            }
+            if (!guildSnap.exists()) { setGuildMembers([]); return }
 
             cleanupMembers()
             const memberInfos = guildSnap.data().members || []
             const otherMembers = memberInfos.filter(m => (typeof m === 'string' ? m : m.uid) !== currentUser.uid)
 
-            // Pre-seed members list to avoid empty state flash
-            setGuildMembers(otherMembers.map(m => ({
-                id: typeof m === 'string' ? m : m.uid,
-                name: 'Chargement...',
-                completedQuests: []
-            })))
+            setGuildMembers(otherMembers.map(m => ({ id: typeof m === 'string' ? m : m.uid, name: 'Chargement...', completedQuests: [] })))
 
             otherMembers.forEach(mInfo => {
                 const uid = typeof mInfo === 'string' ? mInfo : mInfo.uid
@@ -183,54 +184,30 @@ export default function Guide() {
 
                 const unsubMem = onSnapshot(doc(db, 'users', uid), (mSnap) => {
                     if (!isMounted || !mSnap.exists()) return
-
                     const mData = mSnap.data()
-                    const char = charId
-                        ? (mData.characters || []).find(c => c.id === charId)
-                        : (mData.characters?.[0] || null)
-
+                    const char = charId ? (mData.characters || []).find(c => c.id === charId) : (mData.characters?.[0] || null)
                     const quests = char?.completedQuests || mData.completedQuests || []
                     const charName = char?.name || mData.displayName || 'Inconnu'
-
-                    setGuildMembers(prev => prev.map(m =>
-                        m.id === uid ? {
-                            ...m,
-                            name: charName,
-                            charName: charName,
-                            className: char?.class || 'iop',
-                            sex: char?.sex || 'm',
-                            completedQuests: quests
-                        } : m
-                    ))
+                    setGuildMembers(prev => prev.map(m => m.id === uid ? {
+                        ...m, name: charName, charName,
+                        className: char?.class || 'iop', sex: char?.sex || 'm', completedQuests: quests
+                    } : m))
                 })
                 memberUnsubs.push(unsubMem)
             })
         })
 
-        return () => {
-            isMounted = false
-            unsubGuild()
-            cleanupMembers()
-        }
+        return () => { isMounted = false; unsubGuild(); cleanupMembers() }
     }, [userGuildId, currentUser])
-
 
     const handleToggle = useCallback(async (questId) => {
         setUpdating(true)
-        try {
-            await toggleQuest(questId)
-        } finally {
-            setUpdating(false)
-        }
+        try { await toggleQuest(questId) } finally { setUpdating(false) }
     }, [toggleQuest])
 
     const filteredQuests = useMemo(() => {
         let list = QUESTS
-
-        // If filtering, we might only want to show quests, not categories, or maybe both?
-        // Usually, if searching or filtering completed, categories lose context.
-        // Let's hide categories if a specific filter is active.
-        const isFiltering = filter !== 'all' || search.trim() !== '';
+        const isFiltering = filter !== 'all' || search.trim() !== ''
 
         if (filter === 'completed') list = list.filter(q => q.type === 'category' || completedQuests.includes(q.id))
         else if (filter === 'remaining') list = list.filter(q => q.type === 'category' || (q.type === 'quest' && !completedQuests.includes(q.id)))
@@ -240,93 +217,117 @@ export default function Guide() {
             list = list.filter(q => q.type === 'category' || (q.name && q.name.toLowerCase().includes(s)))
         }
 
-        // If filtering, remove empty categories (categories with no matching quests after them)
         if (isFiltering) {
-            const finalFiltered = [];
+            const finalFiltered = []
             for (let i = 0; i < list.length; i++) {
-                const item = list[i];
+                const item = list[i]
                 if (item.type === 'category') {
-                    // Look ahead to see if there's any quest before the next category
-                    let hasQuests = false;
+                    let hasQuests = false
                     for (let j = i + 1; j < list.length; j++) {
-                        if (list[j].type === 'category') break;
-                        if (list[j].type === 'quest') hasQuests = true;
+                        if (list[j].type === 'category') break
+                        if (list[j].type === 'quest') hasQuests = true
                     }
-                    if (hasQuests) finalFiltered.push(item);
+                    if (hasQuests) finalFiltered.push(item)
                 } else {
-                    finalFiltered.push(item);
+                    finalFiltered.push(item)
                 }
             }
-            return finalFiltered;
+            return finalFiltered
         }
 
         return list
-    }, [filter, search, completedQuests])
+    }, [filter, search, completedQuests, QUESTS])
 
-    // Reset pagination when filter or search changes
+    // Reset pagination when filter or search changes (keep page when just loading)
     useEffect(() => {
-        setCurrentPage(1)
+        if (filter !== 'all' || search.trim() !== '') setCurrentPage(1)
     }, [filter, search])
 
-    // Sync pageInput with currentPage
-    useEffect(() => {
-        setPageInput(currentPage.toString())
-    }, [currentPage])
-
-    // Scroll to top when page changes (pagination)
-    useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-    }, [currentPage])
-
+    // Paginate by category chunks
     const pages = useMemo(() => {
-        const result = [];
-        let currentPageChunk = [];
+        const result = []
+        let currentPageChunk = []
 
         for (let i = 0; i < filteredQuests.length; i++) {
-            const item = filteredQuests[i];
-
-            // If it's a category and the current chunk is getting large (e.g. > itemsPerPage * 0.7),
-            // OR if it's the very first item, we consider making a page break.
+            const item = filteredQuests[i]
             if (item.type === 'category' && currentPageChunk.length >= 20) {
-                // Time to break the page before this category, so the new page starts with it
-                result.push(currentPageChunk);
-                currentPageChunk = [item];
+                result.push(currentPageChunk)
+                currentPageChunk = [item]
             } else {
-                currentPageChunk.push(item);
+                currentPageChunk.push(item)
             }
-
-            // Hard limit: if we're way over itemsPerPage without hitting a category, force break anyway
-            // but ideally the dataset has enough categories to naturally chunk it.
             if (currentPageChunk.length >= itemsPerPage * 2) {
-                result.push(currentPageChunk);
-                currentPageChunk = [];
+                result.push(currentPageChunk)
+                currentPageChunk = []
             }
         }
-
-        if (currentPageChunk.length > 0) {
-            result.push(currentPageChunk);
-        }
-
-        return result;
-    }, [filteredQuests]);
+        if (currentPageChunk.length > 0) result.push(currentPageChunk)
+        return result
+    }, [filteredQuests])
 
     const totalPages = Math.max(1, pages.length)
     const currentQuests = pages[currentPage - 1] || []
 
-    const handleCheckAllOnPage = useCallback(async () => {
-        if (!checkMultipleQuests) return;
-        const questsToCheck = currentQuests
-            .filter(item => item.type === 'quest' && !completedQuests.includes(item.id))
-            .map(item => item.id);
+    // Build pagelevel → page index map (which paginated page each pagelevel section starts on)
+    const pageLevelToPageMap = useMemo(() => {
+        if (!PAGE_LEVELS.length || !pages.length) return {}
+        const map = {}
+        PAGE_LEVELS.forEach(({ level, firstStepId }) => {
+            for (let pi = 0; pi < pages.length; pi++) {
+                if (pages[pi].some(item => item.id === firstStepId)) {
+                    map[level] = pi + 1
+                    break
+                }
+            }
+        })
+        return map
+    }, [pages, PAGE_LEVELS])
 
-        if (questsToCheck.length === 0) return;
-
-        setUpdating(true)
-        try {
-            await checkMultipleQuests(questsToCheck)
-        } finally {
-            setUpdating(false)
+    // Handle pagelevel dropdown selection
+    const handlePageLevelChange = (e) => {
+        const val = e.target.value
+        setSelectedPageLevel(val)
+        if (val === 'all') return
+        const targetPage = pageLevelToPageMap[parseInt(val)]
+        if (targetPage) {
+            setCurrentPage(targetPage)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
         }
+    }
+
+    // Save page to localStorage
+    useEffect(() => {
+        localStorage.setItem(SCROLL_KEY_GUIDE, currentPage.toString())
+    }, [currentPage])
+
+    // Save scroll position periodically
+    useEffect(() => {
+        const onScroll = () => {
+            clearTimeout(scrollSaveTimer.current)
+            scrollSaveTimer.current = setTimeout(() => {
+                localStorage.setItem('guide_scrollY', window.scrollY.toString())
+            }, 200)
+        }
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+    }, [])
+
+    // Restore scroll position on mount (after data loads)
+    useEffect(() => {
+        const savedScrollY = localStorage.getItem('guide_scrollY')
+        if (savedScrollY) {
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: parseInt(savedScrollY, 10), behavior: 'instant' })
+            })
+        }
+    }, [])
+
+    const handleCheckAllOnPage = useCallback(async () => {
+        if (!checkMultipleQuests) return
+        const questsToCheck = currentQuests.filter(item => item.type === 'quest' && !completedQuests.includes(item.id)).map(item => item.id)
+        if (questsToCheck.length === 0) return
+        setUpdating(true)
+        try { await checkMultipleQuests(questsToCheck) } finally { setUpdating(false) }
     }, [currentQuests, completedQuests, checkMultipleQuests])
 
     const progressPct = TOTAL === 0 ? 0 : Math.round((completedQuests.length / TOTAL) * 100)
@@ -357,23 +358,15 @@ export default function Guide() {
             <div className="card" style={{ marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                            Progression totale
-                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Progression totale</div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: '700', color: 'var(--primary)' }}>
-                                {progressPct}%
-                            </span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                {completedQuests.length} / {TOTAL} quêtes complétées
-                            </span>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: '700', color: 'var(--primary)' }}>{progressPct}%</span>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{completedQuests.length} / {TOTAL} quêtes complétées</span>
                         </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Restantes</div>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--text-primary)', fontWeight: '700' }}>
-                            {TOTAL - completedQuests.length}
-                        </div>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--text-primary)', fontWeight: '700' }}>{TOTAL - completedQuests.length}</div>
                     </div>
                 </div>
                 <div className="progress-bar-bg" style={{ height: '10px' }}>
@@ -381,8 +374,8 @@ export default function Guide() {
                 </div>
             </div>
 
-            {/* Filter Bar */}
-            <div className="filter-bar">
+            {/* Filter Bar + PageLevel Dropdown */}
+            <div className="filter-bar" style={{ flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
                 <input
                     type="text"
                     className="form-input filter-search"
@@ -396,15 +389,29 @@ export default function Guide() {
                     { key: 'remaining', label: `Restantes (${TOTAL - completedQuests.length})` },
                     { key: 'completed', label: `Complétées (${completedQuests.length})` },
                 ].map(f => (
-                    <button
-                        key={f.key}
-                        id={`filter-${f.key}`}
-                        className={`filter-btn${filter === f.key ? ' active' : ''}`}
-                        onClick={() => setFilter(f.key)}
-                    >
+                    <button key={f.key} id={`filter-${f.key}`} className={`filter-btn${filter === f.key ? ' active' : ''}`} onClick={() => setFilter(f.key)}>
                         {f.label}
                     </button>
                 ))}
+
+                {/* Pagelevel jump dropdown */}
+                {PAGE_LEVELS.length > 0 && (
+                    <select
+                        value={selectedPageLevel}
+                        onChange={handlePageLevelChange}
+                        className="guide-pagelevel-select"
+                        title="Sauter à une tranche de niveau"
+                        style={{ fontFamily: 'var(--font-display)' }}
+                    >
+                        <option value="all">Tranche de niveau...</option>
+                        {PAGE_LEVELS.map(({ level }) => (
+                            <option key={level} value={level}>
+                                Niveaux {level === PAGE_LEVELS[PAGE_LEVELS.length - 1]?.level ? `${level}+` :
+                                    `${level} → ${PAGE_LEVELS[PAGE_LEVELS.findIndex(p => p.level === level) + 1]?.level - 1 || level}`}
+                            </option>
+                        ))}
+                    </select>
+                )}
             </div>
 
             {/* Guild Tracking Section */}
@@ -415,41 +422,39 @@ export default function Guide() {
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {guildMembers.map(member => {
-                            const isTracked = trackedMemberIds.includes(member.id);
+                            const isTracked = trackedMemberIds.includes(member.id)
                             return (
                                 <button
                                     key={member.id}
-                                    onClick={() => {
-                                        setTrackedMemberIds(prev =>
-                                            isTracked ? prev.filter(id => id !== member.id) : [...prev, member.id]
-                                        );
-                                    }}
+                                    onClick={() => setTrackedMemberIds(prev => isTracked ? prev.filter(id => id !== member.id) : [...prev, member.id])}
                                     className={`guild-track-btn ${isTracked ? 'active' : ''}`}
-                                    title={`${member.charName} : ${member.completedQuests.length} quêtes terminées`}
+                                    title={`${member.charName || member.name} : ${member.completedQuests.length} quêtes terminées`}
                                 >
                                     <div className="guild-track-avatar" style={{ overflow: 'hidden', padding: 0, background: 'none' }}>
-                                        <img src={`/assets/images/classes/${member.className}_${member.sex}.png`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <img src={`/assets/images/classes/${member.className || 'iop'}_${member.sex || 'm'}.png`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     </div>
-                                    <span style={{ fontSize: '0.8rem' }}>{member.charName}</span>
+                                    <span style={{ fontSize: '0.8rem' }}>{member.charName || member.name}</span>
                                 </button>
-                            );
+                            )
                         })}
                     </div>
+                    {trackedMemberIds.length > 0 && (
+                        <div style={{ marginTop: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>Moyenne des joueurs suivis : </span>
+                            {TOTAL > 0 ? Math.round((guildMembers.filter(m => trackedMemberIds.includes(m.id)).reduce((acc, m) => acc + m.completedQuests.length, 0) / trackedMemberIds.length) / TOTAL * 100) : 0}%
+                            ({Math.round(guildMembers.filter(m => trackedMemberIds.includes(m.id)).reduce((acc, m) => acc + m.completedQuests.length, 0) / trackedMemberIds.length)} / {TOTAL} quêtes)
+                        </div>
+                    )}
                 </div>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Affichage de {filteredQuests.filter(q => q.type === 'quest').length} quête(s)
+                    Affichage de {filteredQuests.filter(q => q.type === 'quest').length} quête(s) — page {currentPage}/{totalPages}
                     {updating && <span style={{ marginLeft: '8px', color: 'var(--primary)' }}>Sauvegarde en cours...</span>}
                 </div>
                 {currentQuests.some(q => q.type === 'quest' && !completedQuests.includes(q.id)) && (
-                    <button
-                        className="btn btn-secondary"
-                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                        onClick={handleCheckAllOnPage}
-                        disabled={updating}
-                    >
+                    <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={handleCheckAllOnPage} disabled={updating}>
                         Tout cocher sur la page
                     </button>
                 )}
@@ -467,25 +472,13 @@ export default function Guide() {
                             return <CategoryItem key={`cat-${item.originalIndex}`} category={item} />
                         }
 
-                        // Determine which tracked members have completed this specific quest
                         const trackedMembersCompleted = guildMembers
                             .filter(m => trackedMemberIds.includes(m.id))
                             .filter(m => m.completedQuests.includes(item.id))
-                            .map(m => ({
-                                id: m.id,
-                                name: m.name,
-                                className: m.className || 'iop',
-                                sex: m.sex || 'm'
-                            }));
+                            .map(m => ({ id: m.id, name: m.charName || m.name, className: m.className || 'iop', sex: m.sex || 'm' }))
 
                         return (
-                            <QuestItem
-                                key={item.id}
-                                quest={item}
-                                completed={completedQuests.includes(item.id)}
-                                onToggle={handleToggle}
-                                trackedMembersCompleted={trackedMembersCompleted}
-                            />
+                            <QuestItem key={item.id} quest={item} completed={completedQuests.includes(item.id)} onToggle={handleToggle} trackedMembersCompleted={trackedMembersCompleted} />
                         )
                     })
                 )}
@@ -498,40 +491,13 @@ export default function Guide() {
             {/* Pagination */}
             {totalPages > 1 && (
                 <div className="pagination">
-                    <button
-                        className="page-btn"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    >
+                    <button className="page-btn" disabled={currentPage === 1} onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
                         Précédent
                     </button>
                     <div className="page-info">
-                        Page
-                        <form className="page-input-wrapper" onSubmit={(e) => {
-                            e.preventDefault();
-                            const p = parseInt(pageInput);
-                            if (!isNaN(p) && p >= 1 && p <= totalPages) {
-                                setCurrentPage(p);
-                            } else {
-                                setPageInput(currentPage.toString());
-                            }
-                        }}>
-                            <input
-                                type="number"
-                                value={pageInput}
-                                onChange={(e) => setPageInput(e.target.value)}
-                                onBlur={() => setPageInput(currentPage.toString())}
-                                min={1}
-                                max={totalPages}
-                            />
-                        </form>
-                        sur {totalPages}
+                        Page {currentPage} sur {totalPages}
                     </div>
-                    <button
-                        className="page-btn"
-                        disabled={currentPage === totalPages}
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    >
+                    <button className="page-btn" disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
                         Suivant
                     </button>
                 </div>

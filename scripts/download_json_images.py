@@ -5,7 +5,7 @@ import hashlib
 from urllib.parse import urlparse
 
 # Paths
-JSON_FILE = '/home/x0g/Documents/Dofus-world/dofus_dataset(2).json'
+JSON_FILE = '/home/x0g/Documents/Dofus-world/guideopti_brakmar.json'
 IMAGE_DIR = '/home/x0g/Documents/Dofus-world/public/assets/images/json'
 LOCAL_BASE_URL = '/assets/images/json/'
 

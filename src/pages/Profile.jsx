@@ -6,8 +6,8 @@ import CharacterSelectionModal from '../components/CharacterSelectionModal'
 import { doc, updateDoc } from 'firebase/firestore'
 import { updateProfile } from 'firebase/auth'
 import { db, auth } from '../firebase'
-import brakmarQuests from '../../dofus_dataset(2).json'
-import bontaQuests from '../../dofus_dataset(22).json'
+import brakmarQuests from '../../guideopti_brakmar.json'
+import bontaQuests from '../../guideopti_bonta.json'
 
 export default function Profile() {
     const { currentUser, userData } = useAuth()

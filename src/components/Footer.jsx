@@ -63,9 +63,10 @@ export default function Footer() {
                         </a>
                     </div>
 
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0' }}>
-                        Certaines illustrations sont la propriété d'Ankama Studio et de Dofus - Tous droits réservés.
-                    </p>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0', textAlign: 'center', lineHeight: '1.5' }}>
+                        Certaines illustrations sont la propriété d'Ankama Studio et de Dofus - Tous droits réservés.<br />
+                        Certaines données proviennent de dofusdb.fr
+                    </div>
                 </div>
             </div>
         </footer>

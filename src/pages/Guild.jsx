@@ -248,7 +248,10 @@ export default function Guild() {
 
     if (guildData) {
         const avgProgress = members.length > 0
-            ? Math.round(members.reduce((acc, m) => acc + ((m.completedQuests?.length || 0) / TOTAL_QUESTS) * 100, 0) / members.length)
+            ? Math.round(members.reduce((acc, m) => {
+                const completed = m.character?.completedQuests?.length || 0;
+                return acc + (completed / TOTAL_QUESTS) * 100;
+            }, 0) / members.length)
             : 0
 
         return (

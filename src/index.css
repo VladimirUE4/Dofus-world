@@ -1041,6 +1041,391 @@ body {
   border-color: var(--text-muted);
 }
 
+.guide-pagelevel-select {
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--v5-border);
+  color: var(--text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.guide-pagelevel-select:hover {
+  border-color: var(--v5-primary);
+}
+
+.guide-pagelevel-select:focus {
+  outline: none;
+  border-color: var(--v5-primary);
+  box-shadow: 0 0 0 2px rgba(181, 155, 109, 0.2);
+}
+
+/* =========================================
+   BOSS PAGE
+========================================= */
+.boss-page {
+  padding-bottom: 40px;
+}
+
+.boss-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 30px;
+}
+
+.boss-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.boss-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.boss-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translateY(-4px);
+}
+
+.boss-card:hover::before {
+  transform: scaleX(1);
+}
+
+.boss-card.expanded {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.boss-card.expanded::before {
+  transform: scaleX(1);
+}
+
+.boss-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(28, 29, 33, 0.8) 0%, rgba(22, 23, 26, 0.4) 100%);
+  position: relative;
+}
+
+.boss-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.3s ease;
+}
+
+.boss-card:hover .boss-avatar {
+  border-color: var(--border-color);
+}
+
+.boss-avatar-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+}
+
+.boss-title-container {
+  flex: 1;
+}
+
+.boss-name {
+  margin: 0 0 6px 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  transition: color 0.3s ease;
+  line-height: 1.1;
+}
+
+.boss-card:hover .boss-name {
+  color: var(--text-primary);
+}
+
+.boss-name-sub {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 500;
+}
+
+.boss-expand-icon {
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.boss-card.expanded .boss-expand-icon {
+  transform: rotate(180deg);
+  color: var(--primary);
+}
+
+.boss-details {
+  padding: 0 24px 24px 24px;
+  animation: slideDown 0.3s ease-out;
+  border-top: 1px dashed var(--border-color);
+  background: var(--bg-secondary);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.boss-info-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.boss-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 8px 14px;
+  border-radius: 24px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.boss-badge.ocre-badge {
+  background: rgba(79, 128, 255, 0.1);
+  border-color: rgba(79, 128, 255, 0.3);
+  color: var(--primary);
+}
+
+.boss-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.boss-section {
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  padding: 20px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.boss-section:last-child {
+  margin-bottom: 0;
+}
+
+.boss-section h4 {
+  margin-top: 0;
+  margin-bottom: 14px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.5px;
+}
+
+.boss-section p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.boss-spells ul,
+.boss-quests ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.boss-spells li,
+.boss-quests li {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.boss-spells li::before,
+.boss-quests li::before {
+  content: "━";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  color: var(--primary);
+  font-size: 0.8rem;
+}
+
+.boss-quests a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s, text-decoration-color 0.2s;
+  text-underline-offset: 4px;
+}
+
+.boss-quests a:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .boss-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   PATCH NOTES
+========================================= */
+.patch-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+  position: relative;
+}
+
+.patch-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-color);
+  margin-left: -1px;
+  z-index: -1;
+}
+
+.patch-card-row {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.patch-card-row.even {
+  flex-direction: row;
+}
+
+.patch-card-row.odd {
+  flex-direction: row-reverse;
+}
+
+.patch-card-visual {
+  flex: 1;
+  text-align: center;
+  z-index: 1;
+}
+
+.patch-card-content {
+  flex: 1.5;
+  position: relative;
+}
+
+.patch-dot {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 4px solid var(--bg-primary);
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.patch-card-row.even .patch-dot {
+  left: -51px;
+}
+
+.patch-card-row.odd .patch-dot {
+  right: -51px;
+}
+
+@media (max-width: 768px) {
+  .patch-timeline {
+    gap: 40px;
+  }
+
+  .patch-line {
+    left: 20px;
+  }
+
+  .patch-card-row {
+    flex-direction: column !important;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .patch-card-visual {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .patch-image-wrap img {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  .patch-card-content {
+    width: 100%;
+  }
+
+  .patch-dot {
+    left: -32px !important;
+    right: auto !important;
+    top: 30px !important;
+    transform: none !important;
+  }
+}
+
+
 .guild-track-btn {
   display: flex;
   align-items: center;
@@ -3086,4 +3471,387 @@ body {
 
 .dropdown-item.logout:hover {
   background: rgba(255, 68, 68, 0.1);
+}
+
+/* ============================================================
+   ACHIEVEMENTS PAGE
+   ============================================================ */
+
+/* === Achievement Tree Container === */
+.ach-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* === Category Section === */
+.ach-category-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.ach-category-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  padding: 16px 20px;
+  background: rgba(79, 128, 255, 0.04);
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s;
+  user-select: none;
+}
+
+.ach-category-header:hover {
+  background: rgba(79, 128, 255, 0.08);
+}
+
+.ach-category-img {
+  width: 72px;
+  height: 48px;
+  object-fit: cover;
+  object-position: center 20%;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+}
+
+.ach-category-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ach-category-step {
+  font-size: 0.72rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ach-category-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ach-section-chevron {
+  font-size: 1.3rem;
+  color: var(--text-muted);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.ach-section-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.ach-category-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* === Achievement Card === */
+.ach-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ach-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px rgba(79, 128, 255, 0.15);
+}
+
+.ach-card.ach-card-done {
+  border-color: rgba(46, 200, 120, 0.4);
+  background: rgba(46, 200, 120, 0.04);
+  box-shadow: 0 0 12px rgba(46, 200, 120, 0.08);
+}
+
+.ach-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* === Achievement Icon / Checkbox Wrap === */
+.ach-checkbox-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.ach-checkbox-wrap:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 128, 255, 0.12);
+}
+
+.ach-checkbox-wrap.done {
+  border-color: #2ec878;
+  box-shadow: 0 0 0 3px rgba(46, 200, 120, 0.12);
+  background: rgba(46, 200, 120, 0.08);
+}
+
+.ach-icon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.ach-card.ach-card-done .ach-icon {
+  filter: drop-shadow(0 0 6px rgba(46, 200, 120, 0.4));
+}
+
+.ach-done-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(46, 200, 120, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+  border-radius: 3px;
+}
+
+/* Quest rows inside achievement dropdown get slight indent */
+.ach-quest-entry {
+  margin: 0;
+}
+
+.ach-quest-entry .quest-item {
+  background: var(--bg-card);
+}
+
+.ach-quest-guide-badge {
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 100px;
+  background: rgba(79, 128, 255, 0.12);
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* === Achievement Card Info === */
+.ach-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ach-card-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ach-card.ach-card-done .ach-card-name {
+  color: #2ec878;
+}
+
+.ach-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* === Achievement Mini Progress === */
+.ach-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ach-mini-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-card);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.ach-mini-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 100px;
+  transition: width 0.4s ease;
+}
+
+.ach-mini-bar-fill.done {
+  background: #2ec878;
+}
+
+.ach-progress-text {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* === Chevron === */
+.ach-chevron {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.3s ease, color 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(90deg);
+}
+
+.ach-chevron.open {
+  transform: rotate(270deg);
+  color: var(--primary);
+}
+
+/* === Achievement Dropdown === */
+.ach-dropdown {
+  border-top: 1px solid var(--border-color);
+  padding: 10px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.15);
+  animation: ach-slide-down 0.2s ease;
+}
+
+@keyframes ach-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === Quest Row (inside achievement dropdown) === */
+.ach-quest-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.ach-quest-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ach-quest-row.ach-quest-done {
+  opacity: 0.6;
+}
+
+.ach-quest-row.ach-quest-other-guide {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.ach-quest-check {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.ach-quest-check.done {
+  color: #2ec878;
+  font-weight: 700;
+}
+
+.ach-quest-name {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 0;
+}
+
+.ach-quest-done .ach-quest-name {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+
+
+.ach-no-quests {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  font-style: italic;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .ach-category-img {
+    display: none;
+  }
+
+  .ach-card-name {
+    font-size: 0.88rem;
+  }
+
+  .ach-card-desc {
+    display: none;
+  }
+
+  .ach-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ach-category-body {
+    padding: 8px 10px;
+  }
 }

@@ -30,7 +30,7 @@ export default function Navbar() {
     // Onboarding: If logged in with 0 characters, open creation modal
     // Only on "protected" play pages
     useEffect(() => {
-        const protectedPaths = ['/dashboard', '/guide', '/guild', '/profile']
+        const protectedPaths = ['/dashboard', '/guide', '/guild', '/profile', '/achievements']
         const isProtectedPath = protectedPaths.includes(location.pathname)
 
         if (!loading && currentUser && characters.length === 0 && isProtectedPath && !isCharModalOpen && !isSelectionModalOpen) {
@@ -57,6 +57,9 @@ export default function Navbar() {
                 <NavLink to="/almanax" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} onClick={closeMenu}>
                     Almanax
                 </NavLink>
+                <NavLink to="/bosses" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} onClick={closeMenu}>
+                    Boss
+                </NavLink>
                 {currentUser && (
                     <>
                         <NavLink to="/dashboard" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} onClick={closeMenu}>
@@ -67,6 +70,9 @@ export default function Navbar() {
                         </NavLink>
                         <NavLink to="/guild" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} onClick={closeMenu}>
                             Guilde
+                        </NavLink>
+                        <NavLink to="/achievements" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} onClick={closeMenu}>
+                            Succès
                         </NavLink>
                     </>
                 )}
@@ -104,6 +110,7 @@ export default function Navbar() {
                                     </div>
                                     <Link to="/profile" className="dropdown-item" onClick={() => setIsProfileOpen(false)}>Profil</Link>
                                     <Link to="/guide" className="dropdown-item" onClick={() => setIsProfileOpen(false)}>Guide</Link>
+                                    <Link to="/achievements" className="dropdown-item" onClick={() => setIsProfileOpen(false)}>Succès</Link>
                                     <button className="dropdown-item" onClick={() => { setIsSelectionModalOpen(true); setIsProfileOpen(false); }}>
                                         Changer de personnage
                                     </button>

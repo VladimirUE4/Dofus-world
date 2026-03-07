@@ -3,6 +3,19 @@ import { Link } from 'react-router-dom';
 
 const UPDATES = [
     {
+        version: '0.1.4',
+        title: 'Encyclopédie des Boss, Suivi de Guilde & Ergonomie',
+        date: '8 Mars 2026',
+        image: '/assets/images/classes/cra_m.png',
+        description: 'Ajout d\'une encyclopédie publique des boss et améliorations globales de l\'expérience utilisateur.',
+        highlights: [
+            'Nouvelle page publique des Boss avec filtrage Quête Ocre',
+            'Ajout du suivi de validation des Succès en temps réel (Avatars des membres)',
+            'Mémorisation intelligente de la position de scroll sur le Guide et les Succès',
+            'Refonte des filtres de niveaux avec listes déroulantes stylisées'
+        ]
+    },
+    {
         version: '0.1.3',
         title: 'Gestion des Guildes par Personnage',
         date: '4 Mars 2026',
@@ -62,46 +75,30 @@ export default function PatchNotes() {
                 </p>
             </div>
 
-            <div className="patch-timeline" style={{ display: 'flex', flexDirection: 'column', gap: '80px', position: 'relative' }}>
+            <div className="patch-timeline">
                 {/* Vertical Line */}
-                <div style={{ position: 'absolute', left: '50%', top: '0', bottom: '0', width: '2px', background: 'var(--v5-border)', marginLeft: '-1px', zIndex: -1 }}></div>
+                <div className="patch-line"></div>
 
                 {UPDATES.map((update, idx) => (
-                    <div key={update.version} className={`patch-card-row ${idx % 2 === 0 ? 'even' : 'odd'}`} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '40px',
-                        flexDirection: idx % 2 === 0 ? 'row' : 'row-reverse'
-                    }}>
-                        <div className="patch-card-visual" style={{ flex: 1, textAlign: 'center' }}>
+                    <div key={update.version} className={`patch-card-row ${idx % 2 === 0 ? 'even' : 'odd'}`}>
+                        <div className="patch-card-visual">
                             <div className="patch-image-wrap" style={{
                                 background: 'var(--bg-card)',
                                 padding: '20px',
                                 borderRadius: 'var(--radius-lg)',
-                                border: '1px solid var(--v5-border)',
+                                border: '1px solid var(--border-color)',
                                 boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                                 display: 'inline-block'
                             }}>
-                                <img src={update.image} alt={update.title} style={{ width: '200px', height: '200px', objectFit: 'contain' }} />
+                                <img src={update.image} alt={update.title} style={{ width: '200px', height: '200px', objectFit: 'contain' }} className="d-block" />
                             </div>
                         </div>
 
-                        <div className="patch-card-content" style={{ flex: 1.5, position: 'relative' }}>
+                        <div className="patch-card-content">
                             {/* Dot on line */}
-                            <div style={{
-                                position: 'absolute',
-                                left: idx % 2 === 0 ? '-51px' : 'auto',
-                                right: idx % 2 === 0 ? 'auto' : '-51px',
-                                top: '50%',
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '50%',
-                                background: 'var(--primary)',
-                                border: '4px solid var(--bg-primary)',
-                                transform: 'translateY(-50%)'
-                            }}></div>
+                            <div className="patch-dot"></div>
 
-                            <div className="card" style={{ padding: '32px', border: '1px solid var(--v5-border)' }}>
+                            <div className="card" style={{ padding: '32px', border: '1px solid var(--border-color)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                     <span style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '700', letterSpacing: '2px' }}>V{update.version}</span>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{update.date}</span>

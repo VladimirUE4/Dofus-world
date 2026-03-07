@@ -1,0 +1,93 @@
+[
+    {
+        "name": "Crypte de Kardorim",
+        "url": "https://dofusyelle.com/donjons/crypte-de-kardorim",
+        "images": {
+            "boss": "donjons_data/images/crypte_de_kardorim/4051_Kardorim (3).png",
+            "localisation": "donjons_data/images/crypte_de_kardorim/localisation_kardorim.png",
+            "stats": "donjons_data/images/crypte_de_kardorim/stats_kardorim.png"
+        },
+        "vulnerability": "Ce boss n’a pas d’invulnérabilité",
+        "mechanics": null,
+        "spells": [
+            {
+                "type": "spell",
+                "text": "Il ne tape uniquement qu’en mêlée"
+            },
+            {
+                "type": "spell",
+                "text": "Invoque un Kardorib tous les 6 tours, qui tape en mêlée et pousse de 2 cases"
+            }
+        ],
+        "quests": [
+            {
+                "name": "Cryptologie – Dofus Argenté",
+                "url": "https://www.dofuspourlesnoobs.com/cryptologie.html"
+            }
+        ],
+        "capture": "Pierre d’âme de niveau 50 requise",
+        "useful_for_ocre": false
+    },
+    {
+        "name": "Grange du Tournesol Affamé",
+        "url": "https://dofusyelle.com/donjons/grange-du-tournesol-affame",
+        "images": {
+            "boss": "donjons_data/images/grange_du_tournesol_affame/799_Tournesol Affame (1).png",
+            "localisation": "donjons_data/images/grange_du_tournesol_affame/localisation_tournesol-affamé.png",
+            "stats": "donjons_data/images/grange_du_tournesol_affame/stats_tournesol-affamé.png"
+        },
+        "vulnerability": "Ce boss n’a pas d’invulnérabilité",
+        "mechanics": null,
+        "spells": [
+            {
+                "type": "spell",
+                "text": "Il ne tape uniquement qu’en mêlée et en vol de vie"
+            },
+            {
+                "type": "spell",
+                "text": "Invoque un monstre du donjon aléatoire tous les 6 tours"
+            }
+        ],
+        "quests": [
+            {
+                "name": "Le tour du monde – Tour du monde",
+                "url": "https://www.dofuspourlesnoobs.com/le-tour-du-monde.html"
+            }
+        ],
+        "capture": "Pierre d’âme de niveau 50 requise",
+        "useful_for_ocre": true
+    },
+    {
+        "name": "Château Ensablé",
+        "url": "https://dofusyelle.com/donjons/chateau-ensable",
+        "images": {
+            "boss": "donjons_data/images/château_ensable/928_Mob l'Eponge (1).png",
+            "localisation": "donjons_data/images/château_ensable/localisation_chateau-ensablé.png",
+            "stats": "donjons_data/images/château_ensable/stats_mob-leponge.png"
+        },
+        "vulnerability": "Ce boss n’a pas d’invulnérabilité",
+        "mechanics": null,
+        "spells": [
+            {
+                "type": "spell",
+                "text": "Il ne tape uniquement qu’en ligne à 9 PO, sans ligne de vue et en vol de vie"
+            },
+            {
+                "type": "spell",
+                "text": "Se soigne un tour sur deux"
+            },
+            {
+                "type": "spell",
+                "text": "Débuff en zone autour de lui un tour sur quatre"
+            }
+        ],
+        "quests": [
+            {
+                "name": "Donjon en mousse – Tour du Monde",
+                "url": "https://www.dofuspourlesnoobs.com/donjon-en-mousse.html"
+            }
+        ],
+        "capture": "Pierre d’âme de niveau 50 requise",
+        "useful_for_ocre": true
+    }
+]
