@@ -4,3 +4,5 @@ dist/
 .DS_Store
 *.log
 src/firebase.js
+scripts/quests1.json
+scripts/quests2.json
