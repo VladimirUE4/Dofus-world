@@ -27,7 +27,7 @@ export default function Boss() {
                     onClick={() => setShowOcreOnly(!showOcreOnly)}
                     style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                    <img src="/src/images/picto_ocre.png" alt="Ocre" style={{ width: '20px', height: '20px' }} />
+                    <img src="/donjons_data_images/picto_ocre.png" alt="Ocre" style={{ width: '20px', height: '20px' }} />
                     {showOcreOnly ? 'Tous les Boss' : 'Étape Ocre Uniquement'}
                 </button>
             </div>
@@ -74,9 +74,9 @@ export default function Boss() {
                                         {/* State icon */}
                                         <div className="boss-badge">
                                             {isVulnerable ? (
-                                                <img src="/src/images/invulnerable.png" alt="Invulnérable" title="Le boss a un état invulnérable" className="boss-icon" />
+                                                <img src="/donjons_data_images/invulnerable.png" alt="Invulnérable" title="Le boss a un état invulnérable" className="boss-icon" />
                                             ) : (
-                                                <img src="/src/images/vulnerable.png" alt="Vulnérable" title="Le boss n'a pas d'état invulnérable" className="boss-icon" />
+                                                <img src="/donjons_data_images/vulnerable.png" alt="Vulnérable" title="Le boss n'a pas d'état invulnérable" className="boss-icon" />
                                             )}
                                             <span>
                                                 {isVulnerable ? "Invulnérabilité" : "Sans invulnérabilité"}
@@ -86,7 +86,7 @@ export default function Boss() {
                                         {/* Ocre status */}
                                         {hasOcre && (
                                             <div className="boss-badge ocre-badge" title="Requis pour la quête de l'Ocre">
-                                                <img src="/src/images/picto_ocre.png" alt="Ocre" className="boss-icon" />
+                                                <img src="/donjons_data_images/picto_ocre.png" alt="Ocre" className="boss-icon" />
                                                 Etape Ocre
                                             </div>
                                         )}
@@ -104,7 +104,7 @@ export default function Boss() {
                                     {donjon.spells && donjon.spells.length > 0 && (
                                         <div className="boss-section boss-spells">
                                             <h4 className="flex-align-center">
-                                                <img src="/src/images/picto_spells.png" alt="Sorts" className="boss-icon" />
+                                                <img src="/donjons_data_images/picto_spells.png" alt="Sorts" className="boss-icon" />
                                                 Sorts et Capacités
                                             </h4>
                                             <ul>
